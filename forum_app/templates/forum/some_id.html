@@ -1,0 +1,154 @@
+{% extends 'main.html' %}
+{% load tz %}
+
+{% block title %}{{ topic.title }}{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+{% block forum %}active{% endblock %}
+
+{% block body %}
+<br>
+
+<table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%; margin-bottom: 0px;">
+     <tbody>
+         <tr>
+             <td style="background-color: darkblue"><h4 class="indent" style="color: rgb(255, 255, 255); text-align: center;">{{ topic.obj.title }} </h4></td>
+         </tr>
+     </tbody>
+</table>
+<table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%; margin-bottom: 0px;">
+     <tbody>
+         <tr style="height: 40px;">
+             <td style="width:{{topic.percents_of_table_data.0}}" valign="middle">
+                 <p style="text-align: center;">
+                     <a href="{% url 'home_app:some_user' topic.obj.author.username %}">{{topic.obj.author.username}}</a>
+                 </p>
+             </td>
+             <td class="text-white" style="width:{{topic.percents_of_table_data.1}}">
+                 {% if tzone %}
+                    {% if tzone != 'Default' %}
+                        {{topic.obj.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
+                    {% else %}
+                        {{topic.obj.time_added|date:"H:i, d/m/Y"}}
+                    {% endif %}
+                {% else %}
+                    {{topic.obj.time_added|date:"H:i, d/m/Y"}}
+                {% endif %}
+                 <div style="float:right">
+                     Сообщение #0
+                 </div>
+             </td>
+             {% if topic.path_to_crop_upload %}
+             <td class="text-white" style="width:{{topic.percents_of_table_data.2}}">
+                 <p style="text-align: center;">Вложение</p>
+             </td>
+             {% endif %}
+         </tr>
+         <tr>
+             <td style="width:110px; height:150px;">
+                 {% if topic.path_to_avatar %}
+                     <img src="{{MEDIA_URL}}{{topic.path_to_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
+                 {% endif %}
+                 <p style="text-align: center" class="text-white">Регистрация:
+                     {% if tzone %}
+                        {% if tzone != 'Default' %}
+                            {{topic.obj.author.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
+                        {% else %}
+                            {{topic.obj.author.date_joined|date:"H:i, d/m/Y"}}
+                        {% endif %}
+                    {% else %}
+                        {{topic.obj.author.date_joined|date:"H:i, d/m/Y"}}
+                    {% endif %}
+                 </p>
+             </td>
+             <td class="text-white">
+                 {% autoescape off %}
+                 {{ topic.obj.question|linebreaks}}
+                 {%endautoescape%}
+             </td>
+             {% if topic.path_to_crop_upload %}
+             <td align="middle">
+                 <a href="{{MEDIA_URL}}{{ topic.url_to_upload }}" style="font-size: 18px">
+                     <img src="{{MEDIA_URL}}{{topic.path_to_crop_upload}}?{{any_random_integer}}" width="200" height="200" style="display: block; margin-left: auto; margin-right: auto;">
+                 </a>
+             </td>
+             {% endif %}
+         </tr>
+     </tbody>
+</table>
+
+{% if comments %}
+     <br>
+     {% for position, comment in comments.items %}
+         <table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%">
+             <tbody>
+                 <tr style="height: 40px;">
+                     <td style="width:{{comment.percents_of_table_data.0}}" valign="middle"><p style="text-align: center;">
+                         <a href="{% url 'home_app:some_user' comment.obj.author.username %}">{{comment.obj.author.username}}</a>
+                     </p></td>
+                     <td class="text-white" style="width:{{comment.percents_of_table_data.1}}">
+                         {% if tzone %}
+                            {% if tzone != 'Default' %}
+                                {{comment.obj.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
+                            {% else %}
+                                {{comment.obj.time_added|date:"H:i, d/m/Y"}}
+                            {% endif %}
+                        {% else %}
+                            {{comment.obj.time_added|date:"H:i, d/m/Y"}}
+                        {% endif %}
+                         <div style="float:right">
+                             Сообщение #{{position}}
+                         </div>
+                     </td>
+                     {% if comment.url_to_upload %}
+                     <td class="text-white" style="width:{{comment.percents_of_table_data.3}}">
+                         <p style="text-align: center;">Вложение</p>
+                     </td>
+                     {% endif %}
+                 </tr>
+                 <tr>
+                     <td style="width:110px; height:150px;">
+                         {% if comment.path_to_avatar %}
+                             <img src="{{MEDIA_URL}}{{comment.path_to_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
+                         {% endif %}
+                         <p style="text-align: center" class="text-white">Регистация:
+                             {% if tzone %}
+                                {% if tzone != 'Default' %}
+                                    {{comment.obj.author.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
+                                {% else %}
+                                    {{comment.obj.author.date_joined|date:"H:i, d/m/Y"}}
+                                {% endif %}
+                            {% else %}
+                                {{comment.obj.author.date_joined|date:"H:i, d/m/Y"}}
+                            {% endif %}
+                         </p>
+                     </td>
+                     <td class="text-white">
+                         {% autoescape off %}
+                         {{ comment.obj.comment|linebreaks}}
+                         {%endautoescape%}
+                     </td>
+                     {% if comment.url_to_upload %}
+                     <td align="middle">
+                         <div>
+                             <a href="{{MEDIA_URL}}{{ comment.url_to_upload }}" style="font-size: 18px">
+                                 <img src="{{MEDIA_URL}}{{comment.path_to_crop_upload}}" width="200" height="200" style="display: block; margin-left: auto; margin-right: auto;">
+                             </a>
+                         </div>
+                     </td>
+                     {% endif %}
+                 </tr>
+             </tbody>
+         </table>
+     {% endfor %}
+     {% if params.buttons %}
+         <p style="position: center">
+             <a class="btn btn-primary indent" style="color: white" href="?offset={{params.offset_back}}">Назад</a>
+             <a class="btn btn-primary" style="color: white" href="?offset={{params.offset_next}}">Вперед</a>
+         </p>
+     {% endif %}
+{% endif %}
+
+{%endblock%}

@@ -1,0 +1,76 @@
+{% extends 'main.html' %}
+{% load tz %}
+
+{% block title %}Поиск{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block forum %}active{% endblock %}
+
+{% block body %}
+<br>
+<h1 class="indent text-white" style="text-align: center">Поиск</h1>
+{% if all_topics %}
+<table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
+     <thead>
+         <tr>
+             <th scope="col" style="width:60%; margin:auto;">Название</th>
+             <th scope="col" style="width:15%; text-align: center;"><span style="font-size:15px;">Время добавления</span></th>
+             <th scope="col" style="width:5%; text-align: center;"><span style="font-size:12.5px;">Просмотры</span></th>
+             <th scope="col" style="width:20%; text-align: center;">Автор</th>
+         </tr>
+     </thead>
+     <tbody>
+         {% for topic in all_topics %}
+             <tr>
+                 <td>
+                     <a href="{{topic.obj.get_absolute_url}}" class="alert-link"><h5 class="indent" style="line-height: 10px">{{ topic.obj.title }}
+                     <span style="float:right; font-size: 15px; color:rgb(128,128,128);">
+                         в {{topic.section}}
+                     </span>
+                     </h5></a>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px">
+                         {% if tzone %}
+                            {% if tzone != 'Default' %}
+                                {{topic.obj.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
+                            {% else %}
+                                {{topic.obj.time_added|date:"H:i, d/m/Y"}}
+                            {% endif %}
+                        {% else %}
+                            {{topic.obj.time_added|date:"H:i, d/m/Y"}}
+                        {% endif %}
+                     </p>
+                 </td>
+                 <td>
+                     <p style="line-height: 10px; text-align: center;">{{topic.obj.views}}</p>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px"><a href="{% url 'home_app:some_user' topic.obj.author.username %}">{{topic.obj.author.username}}</a></p>
+                 </td>
+             </tr>
+         {% endfor %}
+     </tbody>
+</table>
+{% else %}
+<h3 class="text-white indent">Темы не надены.</h3>
+{% endif %}
+{% if offset_params.buttons %}
+     <p style="position: center">
+         <form method="get" action="?offset={{offset_params.offset_back}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
+             <button class="btn btn-primary indent" type="submit">
+                 Назад
+             </button>
+        </form>
+        <form method="get" action="?offset={{offset_params.offset_next}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
+             <button class="btn btn-primary" type="submit">
+                 Вперед
+             </button>
+        </form>
+     </p>
+{% endif %}
+
+{%endblock%}

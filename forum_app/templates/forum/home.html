@@ -1,0 +1,60 @@
+{% extends 'main.html' %}
+{% load tz %}
+
+{% block title %}Форум{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block forum %}active{% endblock %}
+
+{% block body %}
+<br>
+<h1 class="indent text-white" style="text-align: center">Django Форум</h1>
+<table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
+     <thead>
+         <tr>
+             <th scope="col" style="width:63%; margin:auto;">Раздел</th>
+             <th scope="col" style="width:8%; text-align: center;"><span style="font-size:12.5px;">Количество тем</span></th>
+             <th scope="col" style="width:11%; text-align: center;"><span style="font-size:12.5px;">Последняя тема</span></th>
+             <th scope="col" style="width:11%; text-align: center;"><span style="font-size:12.5px;">Автор последней темы</span></th>
+         </tr>
+     </thead>
+     <tbody>
+         {% for section in sections %}
+             <tr>
+                 <td>
+                     <a href="{% url 'forum_app:some_section' section.section_url_name %}" class="alert-link"><h5 class="indent" style="line-height: 10px">{{ section.section }}</h5></a>
+                 </td>
+                 <td>
+                     <p style="line-height: 10px; text-align: center;">{{section.all_topics_count}}</p>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px">
+                         {% if section.last_updated_time %}
+                             {% if tzone %}
+                                {% if tzone != 'Default' %}
+                                    {{section.last_updated_time|timezone:tzone|date:"H:i, d/m/Y"}}
+                                {% else %}
+                                    {{section.last_updated_time|date:"H:i, d/m/Y"}}
+                                {% endif %}
+                            {% else %}
+                                {{section.last_updated_time|date:"H:i, d/m/Y"}}
+                            {% endif %}
+                         {% endif %}
+                     </p>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px">
+                         {% if section.last_updated_user %}
+                            <a href="{% url 'home_app:some_user' section.last_updated_user %}">{{section.last_updated_user}}</a>
+                         {% endif %}
+                     </p>
+                 </td>
+             </tr>
+         {% endfor %}
+     </tbody>
+</table>
+
+{%endblock%}

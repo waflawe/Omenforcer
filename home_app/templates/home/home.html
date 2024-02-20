@@ -1,0 +1,22 @@
+{% extends 'main.html' %}
+
+{% block title %}Домашняя{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block home %}active{% endblock %}
+
+{% block body %}
+<h1 class="indent" style="color: rgb(255, 255, 255)">Домашняя</h1>
+
+{% if message %}
+     <div class="bd-callout bd-callout-info">
+         <h3 class="indent"><span class="text-info">Обновлено успешно.</span></h3>
+     </div>
+{% endif %}
+
+<br>
+<h3 class="indent text-white">Добрый день, {% firstof request.user.username 'Аноним' %}!</h3>
+{%endblock%}

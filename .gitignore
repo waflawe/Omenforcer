@@ -1,0 +1,29 @@
+/.idea
+/venv
+journal.py
+/forum_app/__pycache__/
+/home_app/__pycache__/
+/forum/__pycache__/
+/apiv1/__pycache__/
+test.py
+README.md
+
+
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+
+# Sensitive or high-churn files
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+
+.env

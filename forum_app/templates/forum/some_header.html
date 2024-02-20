@@ -1,0 +1,83 @@
+{% extends 'main.html' %}
+{% load tz %}
+
+{% block title %}{{section}}{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block forum %}active{% endblock %}
+
+{% block body %}
+<br>
+<h1 class="indent text-white" style="text-align: center">{{section}}</h1>
+{% if success_updated == 'True' %}
+     <div class="p-3 bg-info bg-opacity-10 border border-info border-start-0 rounded-end indent" style="width: 30%;">
+         <h3 class="text-info">Обновлено успешно.</h3>
+     </div>
+{% elif dont_have_required_permissions == 'True' %}
+    <div class="p-3 bg-danger bg-opacity-10 border border-info border-start-0 rounded-end indent" style="width: 30%;">
+        <h3 class="text-danger">Не хватает прав.</h3>
+    </div>
+{% endif %}
+
+<br><br>
+{% if all_topics %}
+<table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
+     <thead>
+         <tr>
+             <th scope="col" style="width:60%; margin:auto;">Название</th>
+             <th scope="col" style="width:15%; text-align: center;"><span style="font-size:15px;">Время добавления</span></th>
+             <th scope="col" style="width:5%; text-align: center;"><span style="font-size:12.5px;">Просмотры</span></th>
+             <th scope="col" style="width:20%; text-align: center;">Автор</th>
+         </tr>
+     </thead>
+     <tbody>
+         {% for topic in all_topics %}
+             <tr>
+                 <td>
+                     <a href="{{topic.get_absolute_url}}" class="alert-link"><h5 class="indent" style="line-height: 10px">{{ topic.title }}</h5></a>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px">
+                         {% if tzone %}
+                            {% if tzone != 'Default' %}
+                                {{topic.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
+                            {% else %}
+                                {{topic.time_added|date:"H:i, d/m/Y"}}
+                            {% endif %}
+                        {% else %}
+                            {{topic.time_added|date:"H:i, d/m/Y"}}
+                        {% endif %}
+                     </p>
+                 </td>
+                 <td>
+                     <p style="line-height: 10px; text-align: center;">{{topic.views}}</p>
+                 </td>
+                 <td>
+                     <p style="text-align: center; line-height: 10px"><a href="{% url 'home_app:some_user' topic.author.username %}">{{topic.author.username}}</a></p>
+                 </td>
+             </tr>
+         {% endfor %}
+     </tbody>
+</table>
+{% else %}
+<h3 class="text-white indent">Темы не надены.</h3>
+{% endif %}
+{% if offset_params.buttons %}
+     <p style="position: center">
+         <form method="get" action="?offset={{offset_params.offset_back}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
+             <button class="btn btn-primary indent" type="submit">
+                 Назад
+             </button>
+        </form>
+        <form method="get" action="?offset={{offset_params.offset_next}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
+             <button class="btn btn-primary" type="submit">
+                 Вперед
+             </button>
+        </form>
+     </p>
+{% endif %}
+
+{%endblock%}

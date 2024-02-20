@@ -1,0 +1,33 @@
+{% extends 'main.html' %}
+
+{% block title %}Добавить тему{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block add %}active{% endblock %}
+{% block forum %}active{% endblock %}
+
+{% block body %}
+<br>
+<h2 class="indent" style="color:rgb(179, 179, 179);">Заполните поля для добавления темы!</h2>
+
+{% if flag_error %}
+     <h3 class="indent text-danger">Некоторые поля указаны неверно.</h3>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+     <div class="mb-3">
+         {% csrf_token %}
+         {% for i in form %}
+             {% if forloop.counter0 != 0 %}
+                <br>
+             {% endif %}
+             <span class="form-label indent text-white">{{i.label}}:</span><br>
+             <span>{{ i }}</span>
+             <br>
+         {% endfor %}
+         <button class="btn btn-primary indent" type="submit">Добавить</button>
+     </div>
+</form>
+{%endblock%}

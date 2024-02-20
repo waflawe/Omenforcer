@@ -1,0 +1,20 @@
+{% extends 'main.html' %}
+
+{% block title %}Удалить тему{% endblock %}
+{% block forum %}active{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+{%endblock%}
+
+{% block delete %}active{% endblock %}
+
+{% block body %}
+<br>
+<form method="POST">
+    {% csrf_token %}
+    <h3 class="indent" style="color: rgb(255, 255, 255)">Вы уверены, что хотите удалить '{{topic.title}}'?</h3>
+    <br>
+    <button type="submit" class="btn btn-danger indent">Да, уверен</button>
+</form>
+{%endblock%}
