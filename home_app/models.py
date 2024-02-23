@@ -1,12 +1,15 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+from forum.settings import DEFAULT_USER_AVATAR_FILENAME, CUSTOM_USER_AVATARS_DIR
+from services.user_settings_core import EMPTY_FIELD_VALUE
+
 
 def process_upload_user_avatar(instance: 'UserSettings', filename: str) -> str:
-    return f"avatars/{instance.user.pk}/{instance.user.pk}.{filename.split('.')[-1]}"
+    return f"{CUSTOM_USER_AVATARS_DIR}/{instance.user.pk}/{instance.user.pk}.{filename.split('.')[-1]}"
 
 
 class UserSettings(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    timezone = models.CharField(max_length=50, default="Default")
-    avatar = models.ImageField(upload_to=process_upload_user_avatar, default="default-user-icon.jpg")
+    timezone = models.CharField(max_length=50, default=EMPTY_FIELD_VALUE)
+    avatar = models.ImageField(upload_to=process_upload_user_avatar, default=DEFAULT_USER_AVATAR_FILENAME)

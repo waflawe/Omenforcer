@@ -4,6 +4,7 @@ from rest_framework.request import Request
 
 from forum_app.models import *
 from home_app.models import UserSettings
+from services.user_settings_core import EMPTY_FIELD_VALUE
 
 import pytz
 from datetime import datetime
@@ -17,8 +18,10 @@ def set_datetime_to_timezone(dt: datetime, timezone: str) -> Tuple[datetime, str
 
 def get_instance_time_attribute(request: Request, instance: 'Topic' | 'Comments', attribute: str = "time_added"):
     dt, timezone = getattr(instance, attribute), "UTC"
-    user_timezone = UserSettings.objects.get(user=request.user).timezone if request.user.is_authenticated else "Default"
-    if request.user.is_authenticated and user_timezone != "Default":
+    user_timezone = UserSettings.objects.get(user=request.user).timezone if request.user.is_authenticated else (
+        EMPTY_FIELD_VALUE
+    )
+    if request.user.is_authenticated and user_timezone != EMPTY_FIELD_VALUE:
         dt, timezone = set_datetime_to_timezone(dt, user_timezone)
     return {
         attribute: dt.strftime("%H:%M %d/%m/%Y"),
@@ -26,31 +29,32 @@ def get_instance_time_attribute(request: Request, instance: 'Topic' | 'Comments'
     }
 
 
+class CustomImageField(serializers.ImageField):
+    def to_representation(self, value):
+        return get_image_link(value)
+
+
 class TopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Topic
-        fields = "id", "title", "views", "author", "section"
-
-
-class TopicDetailSerializer(serializers.ModelSerializer):
-    upload = serializers.CharField(source="get_upload_info")
+    upload = CustomImageField(required=False)
     time_added = serializers.SerializerMethodField()
 
     class Meta:
         model = Topic
         fields = "id", "title", "question", "views", "author", "section", "upload", "time_added"
+        read_only_fields = "author", "id", "time_added", "views"
 
     def get_time_added(self, topic):
         return get_instance_time_attribute(self.context["request"], topic)
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    upload = serializers.CharField(source="get_upload_info")
+    upload = CustomImageField(required=False)
     time_added = serializers.SerializerMethodField()
 
     class Meta:
         model = Comments
         fields = "id", "topic", "comment", "author", "upload", "time_added"
+        read_only_fields = "id", "author", "time_added"
 
     def get_time_added(self, comment):
         return get_instance_time_attribute(self.context["request"], comment)
@@ -73,3 +77,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_last_login(self, user):
         return get_instance_time_attribute(self.context["request"], user, attribute="last_login")
+
+
+class UserAvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = ("avatar",)

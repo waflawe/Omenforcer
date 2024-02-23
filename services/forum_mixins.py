@@ -3,126 +3,187 @@ from django.db.models.query import QuerySet
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 
 from forum_app.models import Topic
 from forum_app.constants import dict_sections, SearchParamsExpressions
-from services.common_mixins import Context, TimezoneMixin
+from services.common_utils import Context, DataValidationMixin, get_timezone
 from tasks.home_app_tasks import make_center_crop
 from forum_app.models import Comments
-from forum.settings import BASE_DIR, MEDIA_ROOT
-from forum_app.forms import TopicForm, CommentForm
 
-from typing import Optional, Dict, NoReturn, NamedTuple, List, Mapping, Tuple, Sized, Literal, Union
-import os
+from typing import Optional, NoReturn, NamedTuple, List, Tuple, Sized, Literal, Iterable, Dict
+from dataclasses import dataclass
 
 
-class ClippedTopicsAndFlags(NamedTuple):
-    clipped_topics: List
+class PercentsOfTableData(NamedTuple):
+    """
+    Кортеж для хранения информации о ширине 'td' HTML тэгов.
+    Используется для красивого отображения заголовков тем и комментариев.
+    """
+
+    one_data: str = "20%"
+    two_data: str = "80%"
+    three_data: Optional[str] = False
+
+
+@dataclass
+class TopicOrCommentObject:
+    """ Датакласс для хранения всей нужной для рендеринга информации о заголовке темы или комментарие. """
+
+    obj: Topic | Comments
+    path_to_author_avatar: Optional[str] = None
+    url_to_upload: Optional[str] = None
+    path_to_crop_upload: Optional[str] = None
+    percents_of_tds_widths: PercentsOfTableData = PercentsOfTableData()
+    section: Optional[str] = None
+
+
+class StripedObjectsAndFlags(NamedTuple):
+    objects: List
     offset_next: int
     offset_back: int
-    view_buttons: bool
+    buttons: bool
 
 
-class SectionMixin(object):
-    def validate_section(self, section: str, topic: Optional[Topic] = None) -> NoReturn | str:
-        if not dict_sections.get(section, False):
+def validate_section(section: str, topic: Optional[Topic] = None) -> NoReturn | str:
+    if not dict_sections.get(section, False):
+        raise Http404
+    if topic:
+        if topic.section != section.lower():
             raise Http404
-        if topic:
-            if topic.section != section.lower():
-                raise Http404
-        return section.lower()
+    return section.lower()
 
 
-class OffsetMixin(object):
-    def get_and_validate_offset(self, request: HttpRequest, instance: Sized) -> int:
-        try:
-            offset = int(request.GET.get("offset", 0))
-            if offset % 20 != 0 or offset > len(instance) or offset < 0:
-                raise Http404
-        except ValueError:
-            raise Http404
-        return offset
+def get_and_validate_offset(request: HttpRequest, instance: Sized) -> int:
+    try:
+        offset = int(request.GET.get("offset", 0))
+        if offset % 20 != 0 or offset > len(instance) or offset < 0:
+            offset = 0
+    except ValueError:
+        offset = 0
+    return offset
 
 
-class BaseContextMixin(OffsetMixin, TimezoneMixin):
-    def _clip_topics_and_get_offset_params(self, request: HttpRequest, queryset: QuerySet) -> ClippedTopicsAndFlags:
-        all_objects = queryset.order_by('-time_added').all()
-        offset = self.get_and_validate_offset(request, all_objects)
+class BaseContextMixin(object):
+    """ Класс для быстрого формирования базового контекста. """
 
-        return ClippedTopicsAndFlags(
-            all_objects[offset:offset + 20],
+    static_base_context_variables = {
+        "view_search_form": "search_form",
+        "view_forum_menu": "forum_menu",
+        "view_link_on_add_comment_page": "view_link_on_add_comment_page",
+        "view_delete_button": "delete",
+        "section": "section",
+        "view_add_comment_button": "add_comment",
+        "search_keys": "search_keys"
+    }
+
+    def get_base_context(self, request: HttpRequest, **kwargs) -> Context:
+        context, queryset = Context(offset_params={}), kwargs.get("queryset", False)
+        for template_name, arg_name in self.static_base_context_variables.items():
+            context[template_name] = kwargs.get(arg_name)
+        if kwargs.get("get_tzone", False):
+            context["tzone"] = get_timezone(request)
+        if not queryset is False:
+            objects, offset_next, offset_back, buttons = self._clip_topics_and_get_offset_params(request, queryset)
+            context[kwargs["queryset_context_alias"]] = objects if len(objects) > 0 else tuple()
+            context["offset_params"]["offset_next"] = offset_next
+            context["offset_params"]["offset_back"], context["offset_params"]["buttons"] = offset_back, buttons
+            context["offset_params"]["search"] = request.GET.get("search", False)
+        return context
+
+    def _clip_topics_and_get_offset_params(self, request: HttpRequest, queryset: QuerySet) -> StripedObjectsAndFlags:
+        offset = get_and_validate_offset(request, queryset)
+        return StripedObjectsAndFlags(
+            queryset[offset:offset + 20],
             offset + 20,
             offset - 20,
-            len(all_objects[offset + 20:]) > 0
+            len(queryset[offset + 20:]) > 0
         )
 
-    def get_base_context(self, request: HttpRequest, queryset: Optional[QuerySet] = None,
-                         tzone: Optional[bool] = None, forum: Optional[bool] = None,
-                         search: Optional[bool] = None, add_comment: Optional[bool] = None,
-                         delete: Optional[bool] = None, section: Optional[str] = None,
-                         search_keys: Optional[Dict] = None) -> Context:
-        c = Context()
-        c["search"], c["forum"], c["tzone"], c["add_comment"], c["delete"], c["section"] = \
-            search, forum, self.get_timezone(request) if tzone else False, add_comment, delete, section
-        if queryset:
-            o_p = {}
-            c["all_topics"], o_p["offset_next"], o_p["offset_back"], o_p["buttons"], o_p["search"] = \
-                *self._clip_topics_and_get_offset_params(request, queryset), request.GET.get("search", False)
-            c["offset_params"] = o_p
-        if search_keys:
-            c["search_keys"] = search_keys.keys()
-        return c
 
+class SearchContextMixin(BaseContextMixin):
+    """ Класс для быстрого формирования базового контекста для страниц, поддерживающих поиск. """
 
-class SearchMixin(SectionMixin, BaseContextMixin):
-    def _get_search_filtered_queryset(self, request: HttpRequest, default_filter: Optional[Mapping] = None) -> \
-            Tuple[QuerySet, Dict | None]:
-        filter_kwargs = dict(default_filter)
-        queryset = Topic.objects.select_related("author").filter(**filter_kwargs)
+    static_search_context_variables = {
+        "get_tzone": True,
+        "forum_menu": True,
+        "search_form": True,
+        "queryset_context_alias": "all_topics"
+    }
+
+    def _get_search_query(self, request: HttpRequest) -> Tuple[Q, Iterable]:
         search = request.GET.get("search", False)
         if not search:
-            return queryset, None
-        filter_kwargs.clear()
-        for p, e in SearchParamsExpressions.Params.items():
-            if request.GET.get(p, False):
-                filter_kwargs[e] = search
+            return Q(), tuple()
+        filter_kwargs = {e: search for p, e in SearchParamsExpressions.Params.items() if request.GET.get(p, False)}
         query = Q()
         for k, v in filter_kwargs.items():
-            query = query | Q(**{f"{k}__contains": v})
-        return queryset.filter(query), filter_kwargs
+            query = query | Q(**{f"{k}__icontains": v})
+        return query, filter_kwargs.keys()
 
-    def get_search_context(self, request: HttpRequest, **filters) -> Context:
+    def get_search_context(self, request: HttpRequest, convert_objects: bool = False, **filters) -> Context:
         if filters.get("section", False):
-            filters["section"] = self.validate_section(filters["section"])
-        queryset, filtered = self._get_search_filtered_queryset(request, default_filter=filters)
-        context = self.get_base_context(request, queryset=queryset, tzone=True, forum=True, search=True,
-                                        section=dict_sections.get(filters.get("section", None)), search_keys=filtered)
-        if queryset.count() == 0:
-            context["all_topics"] = []
+            filters["section"] = validate_section(filters["section"])
+        query, filter_keys = self._get_search_query(request)
+        queryset = (Topic.objects.select_related("author").only
+                    ("title", "section", "views", "time_added", "author__username").filter(**filters).filter(query))
+        context = self.get_base_context(
+            request, queryset=queryset, section=dict_sections.get(filters.get("section", None)),
+            search_keys=filter_keys, **self.static_search_context_variables
+        )
+        if len(context["all_topics"]) > 0 and convert_objects:
+            context["all_topics"] = tuple(TopicOrCommentObject(topic, section=dict_sections[topic.section])
+                                          for topic in context["all_topics"])
         return context
 
 
 class DeleteTopicMixin(object):
-    def delete_topic(self, topic: Topic) -> Literal[None]:
-        comments = list(comment for comment in Comments.objects.filter(topic=topic).all())
-        for comment in comments:
+    """ Миксин для удаления темы. """
+
+    def delete_topic(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Literal[None]:
+        topic = self.check_perms(request, ids, section)
+        for comment in topic.comments:
             comment.delete()
         topic.delete()
 
+    def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Topic | NoReturn:
+        topic = get_object_or_404(Topic, pk=ids)
+        if section:
+            validate_section(section, topic)
+        if topic.author == request.user or request.user.is_superuser():
+            return topic
+        raise PermissionDenied
 
-class AddInstanceMixin(object):
-    def add_instance(self, user: User, post: Mapping, files: Mapping, topic_id: Optional[int] = None) -> \
-            Topic | Comments | str:
+
+class AddInstanceMixin(DataValidationMixin):
+    """ Миксин для добавления темы или комментария. """
+
+    AddInstanceReturn = Tuple[Topic, Literal[None]] | Tuple[Topic, Comments] | Tuple[False, False]
+
+    def add_instance(self, user: User, post: Dict, files: Dict, topic: Optional[int] = None,
+                     section: Optional[str] = None) -> AddInstanceReturn:
+        kwargs = self._get_and_validate_instance_kwargs(user, topic, section)
+        if not kwargs: return False, False
+        instance = Topic.objects.create(**kwargs) if not topic else Comments.objects.create(**kwargs)
+        v, is_valid, data = self.validate_received_data(post, files, instance)
+
+        if is_valid:
+            instance = v.save()
+            if instance.upload:
+                make_center_crop.delay(instance.upload.path)
+            return (instance, None) if not topic else (kwargs["topic"], instance)
+        return False, False
+
+    def get_data_to_serializer(self, data: Dict, files: Dict) -> Dict:
+        return data
+
+    def _get_and_validate_instance_kwargs(self, user: User, topic: int | None, section: str | None) \
+            -> Literal[False] | Dict:
         kwargs = {"author": user}
-        if topic_id:
-            kwargs["topic"] = get_object_or_404(Topic, pk=topic_id)
-        instance = Topic.objects.create(**kwargs) if not topic_id else Comments.objects.create(**kwargs)
-        form = TopicForm(post, files, instance=instance) if not topic_id else CommentForm(post, files,
-                                                                                          instance=instance)
-        if form.is_valid():
-            obj = form.save()
-            if obj.upload:
-                make_center_crop.delay(obj.upload.path)
-            return obj
-        instance.delete()
-        return form.errors
+        if topic:
+            try:
+                kwargs["topic"] = get_object_or_404(Topic, pk=int(topic))
+            except (ValueError, Http404):
+                return False
+            if section: validate_section(section, kwargs["topic"])
+        return kwargs

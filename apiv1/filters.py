@@ -3,7 +3,7 @@ from rest_framework import filters
 from forum_app.constants import SearchParamsExpressions
 
 
-class TopicSearchFilter(filters.SearchFilter):
+class TopicsSearchFilter(filters.SearchFilter):
     def get_search_fields(self, view, request):
         search_fields = []
         for p, e in SearchParamsExpressions.Params.items():

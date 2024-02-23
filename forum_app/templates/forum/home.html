@@ -25,7 +25,7 @@
          {% for section in sections %}
              <tr>
                  <td>
-                     <a href="{% url 'forum_app:some_section' section.section_url_name %}" class="alert-link"><h5 class="indent" style="line-height: 10px">{{ section.section }}</h5></a>
+                     <a href="{% url 'forum_app:some_section' section.section_url_alias %}" class="alert-link"><h5 class="indent" style="line-height: 10px">{{ section.section }}</h5></a>
                  </td>
                  <td>
                      <p style="line-height: 10px; text-align: center;">{{section.all_topics_count}}</p>

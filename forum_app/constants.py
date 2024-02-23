@@ -21,7 +21,7 @@ class Sections(object):
 
 
 class SearchParamsExpressions(object):
-    Params = {"search_in_title": "title", "search_in_question": "question", "search_in_username": "author__username"}
+    Params = {"title": "title", "question": "question", "username": "author__username"}
 
 
 dict_sections = {key: value for key, value in Sections.Sections}

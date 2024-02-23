@@ -8,11 +8,6 @@
      {% block links %}
      {%endblock%}
 </head>
-<style>
-     .navbar-custom{
-         background color: red
-     }
-</style>
 <body style="background-color: rgb(33, 33, 33);">
 <div>
      <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
@@ -48,7 +43,7 @@
          </div>
      </nav>
      <br>
-     {% if forum %}
+     {% if view_forum_menu %}
          <nav class="navbar navbar-expand-lg mx-auto p-2" style="width: 80%; background-color: rgb(25, 25, 25); border-radius: 5px;" data-bs-theme="dark">
              <div class="container-fluid">
                  <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
@@ -57,29 +52,29 @@
                          <a class="nav-link {% block mytopics %} {% endblock %}" aria-current="page" href="{% url 'forum_app:my_topics' %}" style="margin-left: 15px" >
                              Мои темы
                          </a>
-                         {% if add_comment %}
+                         {% if view_add_comment_button %}
                              <span class="indent" style="margin-left: 15px">
                                  <a class="nav-link {% block add_comment %} {% endblock %}" aria-current="page" href="{% url 'forum_app:add_comment' section topic.obj.pk %}">
                                      Добавить комментарий
                                  </a>
                              </span>
                          {% endif %}
-                         {% if delete %}
+                         {% if view_delete_button %}
                              <a class="nav-link {% block delete %} {% endblock %} btn btn-danger" aria-current="page" href="{% url 'forum_app:delete_topic' section topic.obj.pk %}" style="margin-left: 15px">
                                  Удалить тему
                              </a>
                          {% endif %}
-                         {% if search %}
+                         {% if view_search_form %}
                              <div style="float:right" class="indent">
                                  <form class="d-flex" method="get">
                                      <input class="form-control me-2" type="search" placeholder="Поиск" aria-label="Search" name="search" id="search">
                                      <button class="btn btn-outline-success" type="submit">Поиск</button><br><br>
-                                     <input type="checkbox" class="btn-check" name="search_in_title" id="search_in_title" style="margin-left: 15px" {% if 'title' in search_keys %}checked{% endif %} autocomplete="off">
-                                     <label class="btn btn-outline-secondary" for="search_in_title" style="margin-left: 15px">Название</label>
-                                     <input type="checkbox" class="btn-check" name="search_in_question" id="search_in_question" style="margin-left: 15px" {% if 'question' in search_keys %}checked{% endif %} autocomplete="off">
-                                     <label class="btn btn-outline-secondary" for="search_in_question" style="margin-left: 15px">Вопрос</label>
-                                     <input type="checkbox" class="btn-check" name="search_in_username" id="search_in_username" style="margin-left: 15px" {% if 'author__username' in search_keys %}checked{% endif %} autocomplete="off">
-                                     <label class="btn btn-outline-secondary" for="search_in_username" style="margin-left: 15px">Юзернэйм</label>
+                                     <input type="checkbox" class="btn-check" name="title" id="title" style="margin-left: 15px" {% if 'title' in search_keys %}checked{% endif %} autocomplete="off">
+                                     <label class="btn btn-outline-secondary" for="title" style="margin-left: 15px">Название</label>
+                                     <input type="checkbox" class="btn-check" name="question" id="question" style="margin-left: 15px" {% if 'question' in search_keys %}checked{% endif %} autocomplete="off">
+                                     <label class="btn btn-outline-secondary" for="question" style="margin-left: 15px">Вопрос</label>
+                                     <input type="checkbox" class="btn-check" name="username" id="username" style="margin-left: 15px" {% if 'author__username' in search_keys %}checked{% endif %} autocomplete="off">
+                                     <label class="btn btn-outline-secondary" for="username" style="margin-left: 15px">Юзернэйм</label>
                                  </form>
                              </div>
                          {% elif search_home %}

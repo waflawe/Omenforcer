@@ -4,6 +4,7 @@ from django import forms
 from django.forms import TextInput, PasswordInput
 
 from home_app.models import UserSettings
+from services.common_utils import clean_custom_user_avatars_dir
 
 
 class AuthForm(forms.Form):
@@ -28,6 +29,13 @@ class UploadAvatarForm(forms.ModelForm):
         self.fields["avatar"].widget = forms.ClearableFileInput(attrs={
             'style': 'background-color: rgb(20, 20, 20); color: rgb(204, 204, 204)'
         })
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        clean_custom_user_avatars_dir(instance.user)
+        if commit:
+            instance.save()
+        return instance
 
 
 class RegisterForm(UserCreationForm):
