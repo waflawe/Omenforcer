@@ -83,6 +83,11 @@ class BaseContextMixin(object):
             context[template_name] = kwargs.get(arg_name)
         if kwargs.get("get_tzone", False):
             context["tzone"] = get_timezone(request)
+        if kwargs.get("view_info_menu", False):
+            context["view_info_menu"], context["last_joined"] = True, self._get_last_joined_info()
+            context["tzone"] = "UTC" if context["tzone"] in ("Default", False) else context["tzone"]
+            context["total_topics"] = Topic.objects.count()
+            context["total_messages"] = context["total_topics"] + Comments.objects.count()
         if not queryset is False:
             objects, offset_next, offset_back, buttons = self._clip_topics_and_get_offset_params(request, queryset)
             context[kwargs["queryset_context_alias"]] = objects if len(objects) > 0 else tuple()
@@ -100,6 +105,9 @@ class BaseContextMixin(object):
             len(queryset[offset + 20:]) > 0
         )
 
+    def _get_last_joined_info(self) -> User:
+        return User.objects.order_by("-date_joined").first()
+
 
 class SearchContextMixin(BaseContextMixin):
     """ Класс для быстрого формирования базового контекста для страниц, поддерживающих поиск. """
@@ -108,7 +116,8 @@ class SearchContextMixin(BaseContextMixin):
         "get_tzone": True,
         "forum_menu": True,
         "search_form": True,
-        "queryset_context_alias": "all_topics"
+        "queryset_context_alias": "all_topics",
+        "view_info_menu": True
     }
 
     def _get_search_query(self, request: HttpRequest) -> Tuple[Q, Iterable]:

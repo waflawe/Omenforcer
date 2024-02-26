@@ -32,7 +32,7 @@ class ExtendedSection:
 
 class ForumHomeViewUtils(BaseContextMixin):
     def forum_home_view_utils(self, request: HttpRequest) -> Context:
-        context = self.get_base_context(request, get_tzone=True, forum_menu=True)
+        context = self.get_base_context(request, get_tzone=True, forum_menu=True, view_info_menu=True)
         context["search_home"], context["sections"] = True, self._get_sections()
         return context
 
