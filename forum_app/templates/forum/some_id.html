@@ -143,6 +143,8 @@
              </tbody>
          </table>
      {% endfor %}
+{%endblock%}
+{% block buttons %}
      {% if params.buttons %}
          <p style="position: center">
              <a class="btn btn-primary indent" style="color: white" href="?offset={{params.offset_back}}">Назад</a>

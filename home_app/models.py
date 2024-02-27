@@ -13,3 +13,15 @@ class UserSettings(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     timezone = models.CharField(max_length=50, default=EMPTY_FIELD_VALUE)
     avatar = models.ImageField(upload_to=process_upload_user_avatar, default=DEFAULT_USER_AVATAR_FILENAME)
+
+
+class Review(models.Model):
+    reviewer = models.ForeignKey(User, on_delete=models.PROTECT, related_name="reviewer")
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    feedback = models.BooleanField(null=True)
+    time_added = models.DateTimeField(auto_now=True)
+
+
+class UserReviews(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    rating = models.IntegerField(default=0)

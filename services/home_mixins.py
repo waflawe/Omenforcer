@@ -1,12 +1,17 @@
 from __future__ import annotations
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.http import HttpRequest
+from rest_framework.request import Request
+from django.db.models import F
+from django.core.exceptions import ObjectDoesNotExist
 
-from home_app.models import UserSettings
+from home_app.models import UserSettings, Review, UserReviews
+from services.common_utils import DataValidationMixin
 from services.user_settings import settings
 from services.user_settings_core import Setting, E
 
-from typing import Dict, Literal, NamedTuple, Union
+from typing import Dict, Literal, NamedTuple, Union, Tuple, Optional
 
 
 class CheckAndSetSettingsReturn(NamedTuple):
@@ -46,3 +51,40 @@ class UpdateSettingsMixin(object):
                 return CheckOnEditionsReturn(True, setting.error.error_code)
             return CheckOnEditionsReturn(False, "SUCCESS")
         return CheckOnEditionsReturn(False, None)
+
+
+class AddReviewMixin:
+    def add_review(self, request: HttpRequest | Request, ids: int, like: Optional[bool] = True) \
+            -> Tuple[Literal[None] | E, User]:
+        flag, user = self.check_perms(request, {"pk": ids})
+        if isinstance(flag, E): return flag, user
+        review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
+        user_reviews, _ = UserReviews.objects.get_or_create(user=user)
+        if review.feedback == like: return E(3), user
+        update_value = 1 if created else 2
+        review.feedback, user_reviews.rating = like, F("rating") + update_value if like else F("rating") - update_value
+        review.save(update_fields=["feedback", "time_added"]), user_reviews.save(update_fields=["rating"])
+        return None, user
+    
+    def check_perms(self, request: HttpRequest | Request, filter_: Dict) \
+            -> Tuple[Review, User] | Tuple[E, Literal[False] | User]:
+        try:
+            user = User.objects.get(**filter_)
+        except (ObjectDoesNotExist, ValueError):
+            return E(2), False
+        if not request.user.is_authenticated or request.user == user:
+            return E(1), user
+        return Review.objects.filter(reviewer=request.user, user=user).first(), user
+
+
+class DropReviewMixin(AddReviewMixin):
+    def drop_review(self, request: HttpRequest, ids: int) -> Tuple[Literal[None] | E, User]:
+        flag, user = self.check_perms(request, {"pk": ids})
+        if isinstance(flag, E): return flag, user
+        if not flag: return E(4), user
+        review, user_reviews, _ = flag, *UserReviews.objects.get_or_create(user=user)
+        update_value = -1 if review.feedback else 1
+        user_reviews.rating = F("rating") + update_value
+        user_reviews.save(update_fields=["rating"])
+        review.delete()
+        return None, user

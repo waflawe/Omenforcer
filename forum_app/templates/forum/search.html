@@ -58,6 +58,9 @@
 {% else %}
 <h3 class="text-white indent">Темы не надены.</h3>
 {% endif %}
+{%endblock%}
+{% block buttons %}
+
 {% if offset_params.buttons %}
      <p style="position: center">
          <form method="get" action="?offset={{offset_params.offset_back}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">

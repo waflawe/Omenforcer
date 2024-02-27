@@ -4,9 +4,10 @@
 {% block title %}{{user.username}}{% endblock %}
 {% block links %}
 <link rel="stylesheet" href="{{MEDIA_URL}}f.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 {%endblock%}
 
-{% block user %}active{% endblock %}
+{% block user %}{{show_active}}{% endblock %}
 
 {% block body %}
 <h2 class="indent text-white">{{user.username}} персональная страничка!</h2>
@@ -15,31 +16,74 @@
      <h3 class="text-info">Обновлено успешно.</h3>
 </div>
 <br>
+{% elif error %}
+<div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 30%;">
+     <h3 class="text-danger">Ваша оценка не изменилась.</h3>
+</div>
+<br>
+{% elif error4 %}
+<div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 30%;">
+     <h3 class="text-danger">У Вас нет оценки.</h3>
+</div>
+<br>
 {% endif %}
-<img src="{{MEDIA_URL}}{{image}}?{{any_random_integer}}" alt="Avatar" width="250" height="250" class="indent">
-<br><br>
-<ul class="list-group">
-     <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">Дата регистрации:
-          {% if tzone %}
-            {% if tzone != 'Default' %}
-                {{user.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
-            {% else %}
-                {{user.date_joined|date:"H:i, d/m/Y"}}
-            {% endif %}
-          {% else %}
-               {{user.date_joined|date:"H:i, d/m/Y"}}
-          {% endif %}
-     </li >
-     <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">Дата последнего входа:
-          {% if tzone %}
-            {% if tzone != 'Default' %}
-                {{user.last_login|timezone:tzone|date:"H:i, d/m/Y"}}
-            {% else %}
-                {{user.last_login|date:"H:i, d/m/Y"}}
-            {% endif %}
-          {% else %}
-               {{user.last_login|date:"H:i, d/m/Y"}}
-          {% endif %}
-     </li>
-</ul>
+<div style="display: flex">
+    <img src="{{MEDIA_URL}}{{image}}?{{any_random_integer}}" alt="Avatar" width="250" height="250" class="indent">
+    <ul class="list-group" style="width: 100%">
+         <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">Дата регистрации:
+              {% if tzone %}
+                {% if tzone != 'Default' %}
+                    {{user.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
+                {% else %}
+                    {{user.date_joined|date:"H:i, d/m/Y"}}
+                {% endif %}
+              {% else %}
+                   {{user.date_joined|date:"H:i, d/m/Y"}}
+              {% endif %}
+         </li >
+         <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">Дата последнего входа:
+              {% if tzone %}
+                {% if tzone != 'Default' %}
+                    {{user.last_login|timezone:tzone|date:"H:i, d/m/Y"}}
+                {% else %}
+                    {{user.last_login|date:"H:i, d/m/Y"}}
+                {% endif %}
+              {% else %}
+                   {{user.last_login|date:"H:i, d/m/Y"}}
+              {% endif %}
+         </li>
+        <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">
+            Отзывов: {{reviews_count}}. Оценка: {{user_rating}}
+        </li>
+        {% if like %}
+        <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">
+            Ваш отзыв: {{like}}
+        </li>
+        {% endif %}
+    </ul>
+</div>
+{% if form %}
+    <br>
+    <h5 class="text-white indent">Вы можете оценить этого камрада!</h5>
+<div class="indent text-white">
+    <div style="display: inline-block;">
+        <form method="post" action='{% url "home_app:like" user.pk %}'>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Лайк</button>
+        </form>
+    </div>
+    <div style="display: inline-block;">
+        <form method="post" action='{% url "home_app:dislike" user.pk %}'>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Дизлайк</button>
+        </form>
+    </div>
+    <div style="display: inline-block;">
+        <form method="post" action='{% url "home_app:drop" user.pk %}'>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Сбросить</button>
+        </form>
+    </div>
+</div>
+{% endif %}
 {%endblock%}

@@ -1,28 +1,49 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, login
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, reverse, get_object_or_404
+from django.http import HttpRequest, HttpResponse, Http404
+from django.shortcuts import redirect, reverse
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 
-from services.common_utils import get_timezone, get_user_avatar_path, Context, RequestHost
-from services.home_mixins import UpdateSettingsMixin
-from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm, UserSettings
+from services.common_utils import get_user_avatar_path, Context, RequestHost
+from services.home_mixins import UpdateSettingsMixin, AddReviewMixin
+from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm
+from home_app.models import UserReviews, UserSettings, Review
+from services.user_settings_core import E
+from services.forum_mixins import BaseContextMixin
 
 from random import randrange
+from typing import Literal, NoReturn
 import pytz
 
 
-class SomeUserViewUtils(object):
-    def some_user_view_utils(self, request: HttpRequest, username: str) -> Context:
-        user = get_object_or_404(User, username=username)
-        return Context({
+def check_flag(view_self, user: User, flag: Literal[False] | E, attribute: str) \
+        -> NoReturn | HttpResponse | Literal[None]:
+    if flag:
+        if flag == 1: raise PermissionDenied
+        if flag == 2: raise Http404
+        if flag in (3, 4): return view_self.get_redirect(user, attribute)
+
+
+class SomeUserViewUtils(AddReviewMixin, BaseContextMixin):
+    def some_user_view_utils(self, request: HttpRequest, username: str) -> Context | E:
+        context = self.get_base_context(request, get_tzone=True)
+        flag, user = self.check_perms(request, {"username": username})
+        like = Review.objects.filter(reviewer=request.user, user=user).first()
+        return context | {
             "user": user,
-            "tzone": get_timezone(request),
             "image": get_user_avatar_path(user)[0],
             "any_random_integer": randrange(100000),
-            "flag": request.GET.get("show_success", False)
-        })
+            "show_active": "active" if request.user == user else "",
+            "user_rating": UserReviews.objects.get(user=user).rating,
+            "reviews_count": Review.objects.filter(user=user).count(),
+            "like": ("Лайк" if like.feedback else "Дизлайк") if like else None,
+            "form": not isinstance(flag, E),
+            "flag": request.GET.get("show_success", False),
+            "error": request.GET.get("show_error", False),
+            "error4": request.GET.get("show_error_4", False),
+        }
 
 
 class AuthViewUtils(object):
@@ -46,6 +67,7 @@ class RegisterViewUtils(object):
         if form.is_valid():
             user = form.save()
             UserSettings.objects.create(user=user)
+            UserReviews.objects.create(user=user)
             return redirect(f"{reverse('home_app:auth')}?show_success=True")
 
         return view_self.get(request, True, request.POST)
