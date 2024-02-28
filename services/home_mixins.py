@@ -53,19 +53,7 @@ class UpdateSettingsMixin(object):
         return CheckOnEditionsReturn(False, None)
 
 
-class AddReviewMixin:
-    def add_review(self, request: HttpRequest | Request, ids: int, like: Optional[bool] = True) \
-            -> Tuple[Literal[None] | E, User]:
-        flag, user = self.check_perms(request, {"pk": ids})
-        if isinstance(flag, E): return flag, user
-        review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
-        user_reviews, _ = UserReviews.objects.get_or_create(user=user)
-        if review.feedback == like: return E(3), user
-        update_value = 1 if created else 2
-        review.feedback, user_reviews.rating = like, F("rating") + update_value if like else F("rating") - update_value
-        review.save(update_fields=["feedback", "time_added"]), user_reviews.save(update_fields=["rating"])
-        return None, user
-    
+class _ReviewOperationPermissionsTemplate:
     def check_perms(self, request: HttpRequest | Request, filter_: Dict) \
             -> Tuple[Review, User] | Tuple[E, Literal[False] | User]:
         try:
@@ -77,8 +65,22 @@ class AddReviewMixin:
         return Review.objects.filter(reviewer=request.user, user=user).first(), user
 
 
-class DropReviewMixin(AddReviewMixin):
-    def drop_review(self, request: HttpRequest, ids: int) -> Tuple[Literal[None] | E, User]:
+class AddReviewMixin(_ReviewOperationPermissionsTemplate):
+    def add_review(self, request: HttpRequest | Request, ids: int, like: Optional[bool] = True) \
+            -> Tuple[Literal[None] | E, User]:
+        flag, user = self.check_perms(request, {"pk": ids})
+        if isinstance(flag, E): return flag, user
+        review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
+        user_reviews, _ = UserReviews.objects.get_or_create(user=user)
+        if review.feedback == like: return E(3), user
+        update_value = 1 if created else 2
+        review.feedback, user_reviews.rating = like, F("rating") + update_value if like else F("rating") - update_value
+        review.save(update_fields=["feedback", "time_added"]), user_reviews.save(update_fields=["rating"])
+        return None, user
+
+
+class DropReviewMixin(_ReviewOperationPermissionsTemplate):
+    def drop_review(self, request: HttpRequest, ids: int, **kwargs) -> Tuple[Literal[None] | E, User]:
         flag, user = self.check_perms(request, {"pk": ids})
         if isinstance(flag, E): return flag, user
         if not flag: return E(4), user

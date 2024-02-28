@@ -18,19 +18,19 @@ from typing import Literal, NoReturn
 import pytz
 
 
-def check_flag(view_self, user: User, flag: Literal[False] | E, attribute: str) \
+def check_flag(view_self, user: User, flag: Literal[False] | E) \
         -> NoReturn | HttpResponse | Literal[None]:
     if flag:
         if flag == 1: raise PermissionDenied
         if flag == 2: raise Http404
-        if flag in (3, 4): return view_self.get_redirect(user, attribute)
+        if flag in (3, 4): return view_self.on_error(user, flag)
 
 
 class SomeUserViewUtils(AddReviewMixin, BaseContextMixin):
     def some_user_view_utils(self, request: HttpRequest, username: str) -> Context | E:
         context = self.get_base_context(request, get_tzone=True)
         flag, user = self.check_perms(request, {"username": username})
-        like = Review.objects.filter(reviewer=request.user, user=user).first()
+        like = Review.objects.filter(reviewer=request.user, user=user).first() if request.user.is_authenticated else None
         return context | {
             "user": user,
             "image": get_user_avatar_path(user)[0],
@@ -41,7 +41,7 @@ class SomeUserViewUtils(AddReviewMixin, BaseContextMixin):
             "like": ("Лайк" if like.feedback else "Дизлайк") if like else None,
             "form": not isinstance(flag, E),
             "flag": request.GET.get("show_success", False),
-            "error": request.GET.get("show_error", False),
+            "error": request.GET.get("show_error_3", False),
             "error4": request.GET.get("show_error_4", False),
         }
 

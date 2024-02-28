@@ -17,16 +17,17 @@ def home_view(request: HttpRequest) -> HttpResponse:
     return render(request, "home/home.html")
 
 
-class ReviewOperation(View):
-    def get_redirect(self, user: User, attribute: Optional[str] = True) -> HttpResponse:
-        return redirect(f'{reverse("home_app:some_user", kwargs={"username": user.username})}?{attribute}=True')
+class _ReviewOperationTemplate(View):
+    def on_error(self, user: User, error: Optional[int] = None) -> HttpResponse:
+        param = (f"show_error_{error}" if error else "show_success") + "=True"
+        return redirect(f'{reverse("home_app:some_user", kwargs={"username": user.username})}?{param}')
 
 
-class AddReviewView(ReviewOperation, AddReviewMixin):
+class AddReviewView(_ReviewOperationTemplate, AddReviewMixin):
     def make_add_review(self, request: HttpRequest, ids: int, like: Optional[bool] = True) -> HttpResponse:
         flag, user = self.add_review(request, ids, like)
-        error_redirect = check_flag(self, user, flag, "show_error")
-        return error_redirect if error_redirect else self.get_redirect(user, "show_success")
+        error_redirect = check_flag(self, user, flag)
+        return error_redirect if error_redirect else self.on_error(user, None)
 
 
 class LikeView(AddReviewView):
@@ -39,11 +40,11 @@ class DislikeView(AddReviewView):
         return self.make_add_review(request, ids, like=False)
 
 
-class DropView(ReviewOperation, DropReviewMixin):
+class DropView(_ReviewOperationTemplate, DropReviewMixin):
     def post(self, request: HttpRequest, ids: int) -> HttpResponse:
         flag, user = self.drop_review(request, ids)
-        error_redirect = check_flag(self, user, flag, "show_error_4")
-        return error_redirect if error_redirect else self.get_redirect(user, "show_success")
+        error_redirect = check_flag(self, user, flag)
+        return error_redirect if error_redirect else self.on_error(user, None)
 
 
 class SomeUserView(View):
