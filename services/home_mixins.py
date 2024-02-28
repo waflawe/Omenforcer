@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
 
-from home_app.models import UserSettings, Review, UserReviews
+from home_app.models import UserSettings, Review, UserRating
 from services.common_utils import DataValidationMixin
 from services.user_settings import settings
 from services.user_settings_core import Setting, E
@@ -71,7 +71,7 @@ class AddReviewMixin(_ReviewOperationPermissionsTemplate):
         flag, user = self.check_perms(request, {"pk": ids})
         if isinstance(flag, E): return flag, user
         review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
-        user_reviews, _ = UserReviews.objects.get_or_create(user=user)
+        user_reviews, _ = UserRating.objects.get_or_create(user=user)
         if review.feedback == like: return E(3), user
         update_value = 1 if created else 2
         review.feedback, user_reviews.rating = like, F("rating") + update_value if like else F("rating") - update_value
@@ -84,9 +84,19 @@ class DropReviewMixin(_ReviewOperationPermissionsTemplate):
         flag, user = self.check_perms(request, {"pk": ids})
         if isinstance(flag, E): return flag, user
         if not flag: return E(4), user
-        review, user_reviews, _ = flag, *UserReviews.objects.get_or_create(user=user)
+        review, user_reviews, _ = flag, *UserRating.objects.get_or_create(user=user)
         update_value = -1 if review.feedback else 1
         user_reviews.rating = F("rating") + update_value
         user_reviews.save(update_fields=["rating"])
         review.delete()
         return None, user
+
+
+class GetUserReviewsInformationMixin:
+    def get_user_reviews_info(self, reviewer: User, user: User) -> Dict:
+        like = Review.objects.filter(reviewer=reviewer, user=user).first() if reviewer.is_authenticated else None
+        return {
+            "user_rating": UserRating.objects.get(user=user).rating,
+            "reviews_count": Review.objects.filter(user=user).count(),
+            "like": ("Лайк" if like.feedback else "Дизлайк") if like else None,
+        }

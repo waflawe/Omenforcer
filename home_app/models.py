@@ -22,6 +22,6 @@ class Review(models.Model):
     time_added = models.DateTimeField(auto_now=True)
 
 
-class UserReviews(models.Model):
+class UserRating(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     rating = models.IntegerField(default=0)

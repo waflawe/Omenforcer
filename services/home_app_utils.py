@@ -7,9 +7,9 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 
 from services.common_utils import get_user_avatar_path, Context, RequestHost
-from services.home_mixins import UpdateSettingsMixin, AddReviewMixin
+from services.home_mixins import UpdateSettingsMixin, AddReviewMixin, GetUserReviewsInformationMixin
 from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm
-from home_app.models import UserReviews, UserSettings, Review
+from home_app.models import UserRating, UserSettings, Review
 from services.user_settings_core import E
 from services.forum_mixins import BaseContextMixin
 
@@ -26,19 +26,15 @@ def check_flag(view_self, user: User, flag: Literal[False] | E) \
         if flag in (3, 4): return view_self.on_error(user, flag)
 
 
-class SomeUserViewUtils(AddReviewMixin, BaseContextMixin):
+class SomeUserViewUtils(AddReviewMixin, BaseContextMixin, GetUserReviewsInformationMixin):
     def some_user_view_utils(self, request: HttpRequest, username: str) -> Context | E:
         context = self.get_base_context(request, get_tzone=True)
         flag, user = self.check_perms(request, {"username": username})
-        like = Review.objects.filter(reviewer=request.user, user=user).first() if request.user.is_authenticated else None
-        return context | {
+        return context | self.get_user_reviews_info(request.user, user) | {
             "user": user,
             "image": get_user_avatar_path(user)[0],
             "any_random_integer": randrange(100000),
             "show_active": "active" if request.user == user else "",
-            "user_rating": UserReviews.objects.get(user=user).rating,
-            "reviews_count": Review.objects.filter(user=user).count(),
-            "like": ("Лайк" if like.feedback else "Дизлайк") if like else None,
             "form": not isinstance(flag, E),
             "flag": request.GET.get("show_success", False),
             "error": request.GET.get("show_error_3", False),
@@ -67,7 +63,7 @@ class RegisterViewUtils(object):
         if form.is_valid():
             user = form.save()
             UserSettings.objects.create(user=user)
-            UserReviews.objects.create(user=user)
+            UserRating.objects.create(user=user)
             return redirect(f"{reverse('home_app:auth')}?show_success=True")
 
         return view_self.get(request, True, request.POST)

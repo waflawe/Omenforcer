@@ -81,13 +81,13 @@ class AddCommentApiView(CreateAPIView, AddInstanceMixin):
         return Response(status=status.HTTP_201_CREATED if comment else status.HTTP_400_BAD_REQUEST)
 
 
-class GetUserAPIView(ListAPIView):
+class GetUserAPIView(APIView):
     serializer_class = UserSerializer
-    pagination_class = None
-    lookup_url_kwarg = "ids"
 
-    def get_queryset(self):
-        return User.objects.filter(pk=self.kwargs.get(self.lookup_url_kwarg, 0))
+    def get(self, request: Request, ids: int) -> Response:
+        user = get_object_or_404(User, pk=ids)
+        data = self.serializer_class(user, context={"request": request})
+        return Response({"user": data.data})
 
 
 class UpdateSettingsApiView(APIView, UpdateSettingsMixin):

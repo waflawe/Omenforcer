@@ -7,5 +7,5 @@ from apiv1.serializers import UserAvatarSerializer
 settings = (
     include_setting(field="timezone", error_code=3, handler=TimezoneHandler),
     include_setting(field="avatar", error_code=1, handler=AvatarHandler,
-                    validation_classes=ValidationClasses(UploadAvatarForm, UserAvatarSerializer))
+                    validation_classes=ValidationClasses(UploadAvatarForm, UserAvatarSerializer)),
 )

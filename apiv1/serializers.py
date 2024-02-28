@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.request import Request
 
 from forum_app.models import *
-from home_app.models import UserSettings
+from home_app.models import UserSettings, Review, UserRating
 from services.user_settings_core import EMPTY_FIELD_VALUE
 
 import pytz
@@ -36,7 +36,7 @@ class CustomImageField(serializers.ImageField):
 
 class TopicSerializer(serializers.ModelSerializer):
     upload = CustomImageField(required=False)
-    time_added = serializers.SerializerMethodField()
+    time_added = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Topic
@@ -49,7 +49,7 @@ class TopicSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     upload = CustomImageField(required=False)
-    time_added = serializers.SerializerMethodField()
+    time_added = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Comments
@@ -61,13 +61,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
-    date_joined = serializers.SerializerMethodField()
-    last_login = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField(read_only=True)
+    date_joined = serializers.SerializerMethodField(read_only=True)
+    last_login = serializers.SerializerMethodField(read_only=True)
+    rating = serializers.SerializerMethodField(read_only=True)
+    reviews_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
-        fields = "id", "username", "avatar", "date_joined", "last_login"
+        fields = "id", "username", "avatar", "date_joined", "last_login", "rating", "reviews_count"
 
     def get_avatar(self, user):
         return get_image_link(UserSettings.objects.get(user=user).avatar)
@@ -77,6 +79,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_last_login(self, user):
         return get_instance_time_attribute(self.context["request"], user, attribute="last_login")
+
+    def get_rating(self, user):
+        return UserRating.objects.get(user=user).rating
+
+    def get_reviews_count(self, user):
+        return Review.objects.filter(user=user).count()
 
 
 class UserAvatarSerializer(serializers.ModelSerializer):
