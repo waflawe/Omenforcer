@@ -15,7 +15,9 @@ README.md
 *.pyc
 __pycache__
 db.sqlite3
-media
+media/c_images
+media/t_images
+media/avatars
 
 # Sensitive or high-churn files
 .idea/**/dataSources/

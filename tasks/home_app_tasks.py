@@ -10,6 +10,8 @@ from typing import Literal
 
 @shared_task
 def make_center_crop(applicant_avatar_path: str) -> Literal[None]:
+    """ Таска для центрирования аватарки/вложения. """
+
     _center_crop(Image.open(os.path.join(BASE_DIR / applicant_avatar_path))).save(os.path.join(
         get_crop_upload_path(applicant_avatar_path)
     ))

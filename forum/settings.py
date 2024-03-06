@@ -80,13 +80,12 @@ DATABASES = {
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 
-# DEFAULT PROJECT MEDIA PATHS AND DIRS
+# DEFAULT PROJECT WORK SETTINGS
+DEFAULT_USER_TIMEZONE = "Default"
 DEFAULT_USER_AVATAR_FILENAME = "default-user-icon.jpg"
 CUSTOM_USER_AVATARS_DIR = "avatars"
 CUSTOM_TOPIC_UPLOADS_DIR = "t_images"
 CUSTOM_COMMENT_UPLOADS_DIR = "c_images"
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

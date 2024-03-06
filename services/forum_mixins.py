@@ -1,18 +1,22 @@
 from django.http import HttpRequest, Http404
 from django.db.models.query import QuerySet
-from django.db.models import Q
+from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 
 from forum_app.models import Topic
 from forum_app.constants import dict_sections, SearchParamsExpressions
-from services.common_utils import Context, DataValidationMixin, get_timezone
+from services.common_utils import Context, DataValidationMixin, RequestHost
 from tasks.home_app_tasks import make_center_crop
 from forum_app.models import Comments
+from home_app.models import UserSettings
+from error_messages.forum_error_messages import TOPICS_ERRORS, COMMENTS_ERRORS, ErrorMessage
 
-from typing import Optional, NoReturn, NamedTuple, List, Tuple, Sized, Literal, Iterable, Dict
+from typing import Optional, NoReturn, NamedTuple, Tuple, Sized, Literal, Iterable, Dict
 from dataclasses import dataclass
+
+ReverseURL = str
 
 
 class PercentsOfTableData(NamedTuple):
@@ -31,33 +35,88 @@ class TopicOrCommentObject:
     """ Датакласс для хранения всей нужной для рендеринга информации о заголовке темы или комментарие. """
 
     obj: Topic | Comments
-    path_to_author_avatar: Optional[str] = None
+    path_to_author_avatar: str = None
     url_to_upload: Optional[str] = None
     path_to_crop_upload: Optional[str] = None
     percents_of_tds_widths: PercentsOfTableData = PercentsOfTableData()
     section: Optional[str] = None
+    user_signature: str = None
 
 
-class StripedObjectsAndFlags(NamedTuple):
-    objects: List
-    offset_next: int
-    offset_back: int
-    buttons: bool
+class OffsetButton(NamedTuple):
+    """ Класс для хранения нужной HTML кнопке переключения оффсета информации. """
+
+    offset: int
+    view_button: bool
+
+    def __str__(self):
+        return str(self.offset)
+
+    def __sub__(self, other):
+        return self.offset - other
 
 
-def validate_section(section: str, topic: Optional[Topic] = None) -> NoReturn | str:
+class ObjectsAndOffsets(NamedTuple):
+    objects: QuerySet
+    offset: int
+    offset_next: OffsetButton
+    offset_back: OffsetButton
+
+
+class DeleteTopicReturn(NamedTuple):
+    status: bool
+    message: Optional[ErrorMessage] = ""
+
+
+class AddInstanceReturn(NamedTuple):
+    topic: Topic | Literal[None]
+    comment: Literal[None] | Comments | ErrorMessage
+
+
+class OffsetAction(NamedTuple):
+    offset_action: ReverseURL
+    offset_action_param1: Optional[str] = None
+    offset_action_param2: Optional[str] = None
+
+
+def get_timezone(request: HttpRequest) -> Literal[False] | str:
+    if request.user.is_authenticated:
+        return UserSettings.objects.get(user=request.user).timezone
+    return False
+
+
+def validate_section(section: str, topic: Optional[Topic] = None, raise_exception: bool = True) -> NoReturn | str:
+    """ Функция для проверки соответствия переданной секции форума с секцией конкретной темы. """
+
     if not dict_sections.get(section, False):
-        raise Http404
-    if topic:
-        if topic.section != section.lower():
+        if raise_exception:
             raise Http404
+        return False
+    if topic and topic.section != section.lower():
+        if raise_exception:
+            raise Http404
+        return False
     return section.lower()
 
 
+def get_topic_and_validate_section(ids: int, section: Optional[str] = None) -> Tuple[Topic, str]:
+    topic_q = (Topic.objects.select_related("author").only
+               ("id", "title", "question", "time_added", "upload", "author", "section", "views").filter(pk=ids))
+    topic = topic_q.first()
+    if not topic:
+        raise Http404
+    if section:
+        section = validate_section(section, topic)
+    topic_q.update(views=F("views")+1)
+    return topic, section
+
+
 def get_and_validate_offset(request: HttpRequest, instance: Sized) -> int:
+    """ Функция для проверки переданного оффсета. """
+
     try:
         offset = int(request.GET.get("offset", 0))
-        if offset % 20 != 0 or offset > len(instance) or offset < 0:
+        if offset % 20 != 0 or offset >= len(instance) or offset < 0:
             offset = 0
     except ValueError:
         offset = 0
@@ -65,15 +124,14 @@ def get_and_validate_offset(request: HttpRequest, instance: Sized) -> int:
 
 
 class BaseContextMixin(object):
-    """ Класс для быстрого формирования базового контекста. """
+    """ Класс для удобного формирования базового контекста. """
 
     static_base_context_variables = {
         "view_search_form": "search_form",
         "view_forum_menu": "forum_menu",
-        "view_link_on_add_comment_page": "view_link_on_add_comment_page",
         "view_delete_button": "delete",
         "section": "section",
-        "view_add_comment_button": "add_comment",
+        "view_add_comment_button": "add_comment_button",
         "search_keys": "search_keys"
     }
 
@@ -84,33 +142,32 @@ class BaseContextMixin(object):
         if kwargs.get("get_tzone", False):
             context["tzone"] = get_timezone(request)
         if kwargs.get("view_info_menu", False):
-            context["view_info_menu"], context["last_joined"] = True, self._get_last_joined_info()
+            context["view_info_menu"], context["last_joined"] = True, User.objects.order_by("-date_joined").first()
             context["tzone"] = "UTC" if context["tzone"] in ("Default", False) else context["tzone"]
             context["total_topics"] = Topic.objects.count()
             context["total_messages"] = context["total_topics"] + Comments.objects.count()
         if not queryset is False:
-            objects, offset_next, offset_back, buttons = self._clip_topics_and_get_offset_params(request, queryset)
+            objects, offset, offset_next, offset_back = self._clip_topics_and_get_offset_params(request, queryset)
             context[kwargs["queryset_context_alias"]] = objects if len(objects) > 0 else tuple()
-            context["offset_params"]["offset_next"] = offset_next
-            context["offset_params"]["offset_back"], context["offset_params"]["buttons"] = offset_back, buttons
+            context["offset_params"]["offset_next"], context["offset_params"]["offset"] = offset_next, offset
+            context["offset_params"]["offset_back"] = offset_back
             context["offset_params"]["search"] = request.GET.get("search", False)
+            action = kwargs["offset_action"]
+            context["offset_action"] = action
         return context
 
-    def _clip_topics_and_get_offset_params(self, request: HttpRequest, queryset: QuerySet) -> StripedObjectsAndFlags:
+    def _clip_topics_and_get_offset_params(self, request: HttpRequest, queryset: QuerySet) -> ObjectsAndOffsets:
         offset = get_and_validate_offset(request, queryset)
-        return StripedObjectsAndFlags(
-            queryset[offset:offset + 20],
-            offset + 20,
-            offset - 20,
-            len(queryset[offset + 20:]) > 0
+        return ObjectsAndOffsets(
+            queryset,
+            offset,
+            OffsetButton(offset + 20, len(queryset[offset + 20:]) > 0),
+            OffsetButton(offset - 20, len(queryset[:offset]) > 0),
         )
-
-    def _get_last_joined_info(self) -> User:
-        return User.objects.order_by("-date_joined").first()
 
 
 class SearchContextMixin(BaseContextMixin):
-    """ Класс для быстрого формирования базового контекста для страниц, поддерживающих поиск. """
+    """ Класс для удобного формирования базового контекста для страниц, поддерживающих поиск. """
 
     static_search_context_variables = {
         "get_tzone": True,
@@ -130,36 +187,52 @@ class SearchContextMixin(BaseContextMixin):
             query = query | Q(**{f"{k}__icontains": v})
         return query, filter_kwargs.keys()
 
-    def get_search_context(self, request: HttpRequest, convert_objects: bool = False, **filters) -> Context:
-        if filters.get("section", False):
-            filters["section"] = validate_section(filters["section"])
+    def get_search_context(self, request: HttpRequest, offset_action: OffsetAction, convert_objects: bool = False,
+                           **base_topic_filters) -> Context:
+        if base_topic_filters.get("section", False):
+            base_topic_filters["section"] = validate_section(base_topic_filters["section"])
         query, filter_keys = self._get_search_query(request)
-        queryset = (Topic.objects.select_related("author").only
-                    ("title", "section", "views", "time_added", "author__username").filter(**filters).filter(query))
+        fields = "title", "section", "views", "time_added", "author__username"
+        queryset = Topic.objects.select_related("author").only(*fields).filter(**base_topic_filters).filter(query)
         context = self.get_base_context(
-            request, queryset=queryset, section=dict_sections.get(filters.get("section", None)),
-            search_keys=filter_keys, **self.static_search_context_variables
+            request, queryset=queryset, section=dict_sections.get(base_topic_filters.get("section", None)),
+            search_keys=filter_keys, offset_action=offset_action, **self.static_search_context_variables
         )
+        offset, offset_next = context["offset_params"]["offset"], context["offset_params"]["offset_next"].offset
+        context["all_topics"] = context["all_topics"][offset:offset_next]
         if len(context["all_topics"]) > 0 and convert_objects:
             context["all_topics"] = tuple(TopicOrCommentObject(topic, section=dict_sections[topic.section])
                                           for topic in context["all_topics"])
         return context
 
+    # Как тут сделать сортировку?..
+    # def _get_and_validate_sort(self, request: HttpRequest) -> Literal[False] | str:
+    #     sort = request.GET.get("sort", False)
+    #     if sort and sort == "time_updated":
+    #         return "time_updated"
+    #     return False
+
 
 class DeleteTopicMixin(object):
     """ Миксин для удаления темы. """
 
-    def delete_topic(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Literal[None]:
+    request_host = None   # переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
+
+    def delete_topic(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> DeleteTopicReturn:
         topic = self.check_perms(request, ids, section)
+        if not topic: return DeleteTopicReturn(False, TOPICS_ERRORS["section"])
         for comment in topic.comments:
             comment.delete()
         topic.delete()
+        return DeleteTopicReturn(True)
 
-    def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Topic | NoReturn:
+    def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Topic | NoReturn | False:
         topic = get_object_or_404(Topic, pk=ids)
         if section:
-            validate_section(section, topic)
-        if topic.author == request.user or request.user.is_superuser():
+            flag = validate_section(section, topic, raise_exception=self.request_host == RequestHost.VIEW)
+            if self.request_host == RequestHost.APIVIEW:
+                return flag
+        if topic.author == request.user or request.user.is_superuser:
             return topic
         raise PermissionDenied
 
@@ -167,32 +240,37 @@ class DeleteTopicMixin(object):
 class AddInstanceMixin(DataValidationMixin):
     """ Миксин для добавления темы или комментария. """
 
-    AddInstanceReturn = Tuple[Topic, Literal[None]] | Tuple[Topic, Comments] | Tuple[False, False]
-
     def add_instance(self, user: User, post: Dict, files: Dict, topic: Optional[int] = None,
-                     section: Optional[str] = None) -> AddInstanceReturn:
-        kwargs = self._get_and_validate_instance_kwargs(user, topic, section)
-        if not kwargs: return False, False
+                     section: Optional[str] = None, serializer_context: Optional[Dict] = None) -> AddInstanceReturn:
+        kwargs = self._get_and_validate_kwargs(user, topic, section)
+        if isinstance(kwargs, ErrorMessage): return AddInstanceReturn(None, kwargs)
         instance = Topic.objects.create(**kwargs) if not topic else Comments.objects.create(**kwargs)
-        v, is_valid, data = self.validate_received_data(post, files, instance)
+        v, is_valid, data = self.validate_received_data(post, files, instance, serializer_context=serializer_context)
 
         if is_valid:
             instance = v.save()
             if instance.upload:
                 make_center_crop.delay(instance.upload.path)
-            return (instance, None) if not topic else (kwargs["topic"], instance)
-        return False, False
+            return AddInstanceReturn(*((instance, None) if not topic else (kwargs["topic"], instance)))
+        instance.delete()
+        try:
+            error_field = list(v.errors.as_data().keys())[0]
+        except AttributeError:
+            error_field = v.errors.popitem(last=False)[0]
+        return AddInstanceReturn(None, (TOPICS_ERRORS[error_field] if not topic else COMMENTS_ERRORS[error_field]))
 
     def get_data_to_serializer(self, data: Dict, files: Dict) -> Dict:
         return data
 
-    def _get_and_validate_instance_kwargs(self, user: User, topic: int | None, section: str | None) \
-            -> Literal[False] | Dict:
+    def _get_and_validate_kwargs(self, user: User, topic: Optional[int] = None, section: Optional[str] = None) \
+            -> ErrorMessage | Dict:
         kwargs = {"author": user}
-        if topic:
-            try:
-                kwargs["topic"] = get_object_or_404(Topic, pk=int(topic))
-            except (ValueError, Http404):
-                return False
-            if section: validate_section(section, kwargs["topic"])
-        return kwargs
+        if not topic:
+            return kwargs
+        try:
+            kwargs["topic"] = get_object_or_404(Topic, pk=int(topic))
+        except (ValueError, Http404):
+            return TOPICS_ERRORS["id"]
+        if section:
+            flag = validate_section(section, kwargs["topic"])
+            if not flag: return TOPICS_ERRORS["section"]

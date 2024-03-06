@@ -11,20 +11,15 @@
 
 {% block body %}
 <h2 class="indent text-white">{{user.username}} персональная страничка!</h2>
-{% if flag %}
+{% if show_success %}
 <div class="p-3 bg-info bg-opacity-10 border border-info border-start-0 rounded-end indent" style="width: 30%;">
      <h3 class="text-info">Обновлено успешно.</h3>
 </div>
 <br>
-{% elif error %}
+{% elif error_message %}
 <div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 30%;">
-     <h3 class="text-danger">Ваша оценка не изменилась.</h3>
-</div>
-<br>
-{% elif error4 %}
-<div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 30%;">
-     <h3 class="text-danger">У Вас нет оценки.</h3>
-</div>
+     <h3 class="indent text-danger">{{error_message}}</h3>
+ </div>
 <br>
 {% endif %}
 <div style="display: flex">
@@ -58,6 +53,11 @@
         {% if like %}
         <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">
             Ваш отзыв: {{like}}
+        </li>
+        {% endif %}
+        {% if user_signature %}
+        <li class="list-group-item list-group-item-secondary indent" style="width: 30%;">
+            Подпись: {{user_signature}}
         </li>
         {% endif %}
     </ul>

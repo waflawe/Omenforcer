@@ -21,12 +21,12 @@
 <table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%; margin-bottom: 0px;">
      <tbody>
          <tr style="height: 40px;">
-             <td style="width:{{topic.percents_of_table_data.0}}" valign="middle">
+             <td style="width:{{topic.percents_of_tds_widths.0}}" valign="middle">
                  <p style="text-align: center;">
                      <a href="{% url 'home_app:some_user' topic.obj.author.username %}">{{topic.obj.author.username}}</a>
                  </p>
              </td>
-             <td class="text-white" style="width:{{topic.percents_of_table_data.1}}">
+             <td class="text-white" style="width:{{topic.percents_of_tds_widths.1}}">
                  {% if tzone %}
                     {% if tzone != 'Default' %}
                         {{topic.obj.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
@@ -41,15 +41,15 @@
                  </div>
              </td>
              {% if topic.path_to_crop_upload %}
-             <td class="text-white" style="width:{{topic.percents_of_table_data.2}}">
+             <td class="text-white" style="width:{{topic.percents_of_tds_widths.2}}">
                  <p style="text-align: center;">Вложение</p>
              </td>
              {% endif %}
          </tr>
          <tr>
              <td style="width:110px; height:150px;">
-                 {% if topic.path_to_avatar %}
-                     <img src="{{MEDIA_URL}}{{topic.path_to_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
+                 {% if topic.path_to_author_avatar %}
+                     <img src="{{MEDIA_URL}}{{topic.path_to_author_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
                  {% endif %}
                  <p style="text-align: center" class="text-white">Регистрация:
                      {% if tzone %}
@@ -67,6 +67,8 @@
                  {% autoescape off %}
                  {{ topic.obj.question|linebreaks}}
                  {%endautoescape%}
+                 <hr style="color: green">
+                 <span class="text-secondary">{{topic.user_signature}}</span>
              </td>
              {% if topic.path_to_crop_upload %}
              <td align="middle">
@@ -85,10 +87,10 @@
          <table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%">
              <tbody>
                  <tr style="height: 40px;">
-                     <td style="width:{{comment.percents_of_table_data.0}}" valign="middle"><p style="text-align: center;">
+                     <td style="width: {{comment.percents_of_tds_widths.0}}" valign="middle"><p style="text-align: center;">
                          <a href="{% url 'home_app:some_user' comment.obj.author.username %}">{{comment.obj.author.username}}</a>
                      </p></td>
-                     <td class="text-white" style="width:{{comment.percents_of_table_data.1}}">
+                     <td class="text-white" style="width: {{comment.percents_of_tds_widths.1}}">
                          {% if tzone %}
                             {% if tzone != 'Default' %}
                                 {{comment.obj.time_added|timezone:tzone|date:"H:i, d/m/Y"}}
@@ -103,15 +105,15 @@
                          </div>
                      </td>
                      {% if comment.url_to_upload %}
-                     <td class="text-white" style="width:{{comment.percents_of_table_data.3}}">
+                     <td class="text-white" style="width:{{comment.percents_of_tds_widths.3}}">
                          <p style="text-align: center;">Вложение</p>
                      </td>
                      {% endif %}
                  </tr>
                  <tr>
                      <td style="width:110px; height:150px;">
-                         {% if comment.path_to_avatar %}
-                             <img src="{{MEDIA_URL}}{{comment.path_to_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
+                         {% if comment.path_to_author_avatar %}
+                             <img src="{{MEDIA_URL}}{{comment.path_to_author_avatar}}?{{any_random_integer}}" alt="Avatar" width="175" height="175" style="display: block; margin-left: auto; margin-right: auto;">
                          {% endif %}
                          <p style="text-align: center" class="text-white">Регистация:
                              {% if tzone %}
@@ -129,6 +131,8 @@
                          {% autoescape off %}
                          {{ comment.obj.comment|linebreaks}}
                          {%endautoescape%}
+                         <hr style="color: green">
+                         <span class="text-secondary">{{comment.user_signature}}</span>
                      </td>
                      {% if comment.url_to_upload %}
                      <td align="middle">
@@ -143,14 +147,5 @@
              </tbody>
          </table>
      {% endfor %}
-{%endblock%}
-{% block buttons %}
-     {% if params.buttons %}
-         <p style="position: center">
-             <a class="btn btn-primary indent" style="color: white" href="?offset={{params.offset_back}}">Назад</a>
-             <a class="btn btn-primary" style="color: white" href="?offset={{params.offset_next}}">Вперед</a>
-         </p>
-     {% endif %}
 {% endif %}
-
 {%endblock%}

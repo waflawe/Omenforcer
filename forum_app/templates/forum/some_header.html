@@ -16,13 +16,11 @@
      <div class="p-3 bg-info bg-opacity-10 border border-info border-start-0 rounded-end indent" style="width: 30%;">
          <h3 class="text-info">Обновлено успешно.</h3>
      </div>
-{% elif dont_have_required_permissions == 'True' %}
-    <div class="p-3 bg-danger bg-opacity-10 border border-info border-start-0 rounded-end indent" style="width: 30%;">
-        <h3 class="text-danger">Не хватает прав.</h3>
-    </div>
+{% else %}
+<br>
 {% endif %}
 
-<br><br>
+<br>
 {% if all_topics %}
 <table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
      <thead>
@@ -66,21 +64,3 @@
 <h3 class="text-white indent">Темы не надены.</h3>
 {% endif %}
 {% endblock %}
-{% block buttons %}
-
-{% if offset_params.buttons %}
-     <p style="position: center">
-         <form method="get" action="?offset={{offset_params.offset_back}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
-             <button class="btn btn-primary indent" type="submit">
-                 Назад
-             </button>
-        </form>
-        <form method="get" action="?offset={{offset_params.offset_next}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
-             <button class="btn btn-primary" type="submit">
-                 Вперед
-             </button>
-        </form>
-     </p>
-{% endif %}
-
-{%endblock%}

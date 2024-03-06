@@ -5,21 +5,32 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import redirect, reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
+from django import forms
+from rest_framework.request import Request
 
 from services.common_utils import get_user_avatar_path, Context, RequestHost
 from services.home_mixins import UpdateSettingsMixin, AddReviewMixin, GetUserReviewsInformationMixin
-from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm
-from home_app.models import UserRating, UserSettings, Review
+from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm, ChangeSignatureForm
+from home_app.models import UserRating, UserSettings
 from services.user_settings_core import E
 from services.forum_mixins import BaseContextMixin
 
 from random import randrange
-from typing import Literal, NoReturn
+from typing import Literal, NoReturn, Type, Dict
 import pytz
+
+
+def check_is_user_auth(request: HttpRequest | Request) -> bool:
+    return request.user.is_authenticated
 
 
 def check_flag(view_self, user: User, flag: Literal[False] | E) \
         -> NoReturn | HttpResponse | Literal[None]:
+    """
+    Функция для анализа полученного при проверке прав на операции с рейтингом флага
+    и возвращения соответствующей ему ошибки.
+    """
+
     if flag:
         if flag == 1: raise PermissionDenied
         if flag == 2: raise Http404
@@ -30,15 +41,15 @@ class SomeUserViewUtils(AddReviewMixin, BaseContextMixin, GetUserReviewsInformat
     def some_user_view_utils(self, request: HttpRequest, username: str) -> Context | E:
         context = self.get_base_context(request, get_tzone=True)
         flag, user = self.check_perms(request, {"username": username})
+        image, user_settings = get_user_avatar_path(user)
         return context | self.get_user_reviews_info(request.user, user) | {
             "user": user,
-            "image": get_user_avatar_path(user)[0],
+            "image": image,
+            "user_signature": user_settings.signature,
             "any_random_integer": randrange(100000),
             "show_active": "active" if request.user == user else "",
             "form": not isinstance(flag, E),
-            "flag": request.GET.get("show_success", False),
-            "error": request.GET.get("show_error_3", False),
-            "error4": request.GET.get("show_error_4", False),
+            "show_success": request.GET.get("show_success", False),
         }
 
 
@@ -48,7 +59,6 @@ class AuthViewUtils(object):
 
         if form.is_valid():
             user = authenticate(username=request.POST["username"], password=request.POST["password"])
-
             if user is not None:
                 login(request, user)
                 return redirect("/")
@@ -70,15 +80,18 @@ class RegisterViewUtils(object):
 
 
 class SettingsViewUtils(UpdateSettingsMixin):
-    validation_class = UploadAvatarForm
+    forms: Dict[str, Type[forms.ModelForm] | forms.ModelForm] = {"avatar_form": UploadAvatarForm,
+                                                                 "signature_form": ChangeSignatureForm}
     request_host = RequestHost.VIEW
 
     def settings_view_get_utils(self, request: HttpRequest, flag_success: bool, flag_error: bool) -> Context:
+        data = {"signature": UserSettings.objects.get(user=request.user).signature}
+        self.forms["signature_form"] = self.forms["signature_form"](data)
         return Context({
             "tzs": pytz.common_timezones,
             "flag_error": flag_error,
             "flag_success": flag_success,
-            "form": self.validation_class()
+            "forms": self.forms
         })
 
     def settings_view_post_utils(self, view_self, request: HttpRequest) -> HttpResponse:

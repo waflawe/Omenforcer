@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View

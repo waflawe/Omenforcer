@@ -12,15 +12,9 @@
 <h1 class="indent text-white">Настройки для {{request.user.username}}</h1>
 
 {% if flag_error %}
-     {% if flag_error == 1 %}
-         <div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 40%;">
-             <h3 class="indent text-danger">Проблемы с расшерением файла.</h3>
-         </div>
-     {% elif flag_error == 3 %}
-         <div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 40%;">
-             <h3 class="indent text-danger">Неверная временная зона.</h3>
-         </div>
-     {% endif %}
+     <div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 30%;">
+         <h3 class="indent text-danger">{{flag_error}}</h3>
+     </div>
 {% endif %}
 
 <br>
@@ -33,12 +27,14 @@
              <option value="{{tz}}">
          {% endfor %}
         </datalist>
-     <br>
-     {% for i in form %}
-         <h3><span class="form-label indent" style="color: rgb(255, 255, 255)">{{i.label}}</span></h3>
-         <span class="indent" style="color: rgb(255, 255, 255)">{{ i }}</span>
+     {% for _, form in forms.items %}
+         {% for i in form %}
+             <br>
+             <h3><span class="form-label indent" style="color: rgb(255, 255, 255)">{{i.label}}</span></h3>
+             <span class="indent" style="color: rgb(255, 255, 255)">{{i}}</span><br>
+         {% endfor %}
      {% endfor %}
-     <br><br>
+     <br>
      <button type="submit" class="btn btn-primary indent">Сохранить</button>
 </form>
 {% endblock %}

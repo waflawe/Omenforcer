@@ -60,19 +60,3 @@
      <h3 class="indent text-white">Темы не найдены.</h3>
 {% endif %}
 {%endblock%}
-{% block buttons %}
-{% if offset_params.buttons %}
-     <p style="position: center">
-         <form method="get" action="?offset={{offset_params.offset_back}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
-             <button class="btn btn-primary indent" type="submit">
-                 Назад
-             </button>
-        </form>
-        <form method="get" action="?offset={{offset_params.offset_next}}{% if offset_params.search %}&search={{offset_params.search}}{% endif %}">
-             <button class="btn btn-primary" type="submit">
-                 Вперед
-             </button>
-        </form>
-     </p>
-{% endif %}
-{%endblock%}

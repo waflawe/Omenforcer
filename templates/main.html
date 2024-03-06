@@ -91,7 +91,53 @@
          </nav>
      {% endif %}
      {% block body %}
-     {%endblock%}
+    {% endblock %}
+    {% if offset_action %}
+     <div style="text-align:center">
+        {% if offset_params.offset_back.view_button %}
+             <div style="display: inline-block;">
+                 <form method="get" action="
+                 {% if offset_action.offset_action_param1 and offset_action.offset_action_param2 %}
+                    {% url offset_action.offset_action offset_action.offset_action_param1 offset_action.offset_action_param2 %}
+                 {% elif offset_action.offset_action_param1 %}
+                    {% url offset_action.offset_action offset_action.offset_action_param1 %}
+                 {% else %}
+                    {% url offset_action.offset_action %}
+                 {% endif %}
+                 ">
+                     <input type="hidden" name="offset" value="{{offset_params.offset_back.offset}}">
+                     {% if offset_params.search %}
+                     <input type="hidden" name="search" value="{{offset_params.search}}">
+                     {% endif %}"
+                     <button class="btn btn-primary" type="submit">
+                         Назад
+                     </button>
+                </form>
+             </div>
+        {% endif %}
+        {% if offset_params.offset_next.view_button %}
+             <div style="display: inline-block;">
+                 <form method="get" action="
+                 {% if offset_action.offset_action_param1 and offset_action.offset_action_param2 %}
+                    {% url offset_action.offset_action offset_action.offset_action_param1 offset_action.offset_action_param2 %}
+                 {% elif offset_action.offset_action_param1 %}
+                    {% url offset_action.offset_action offset_action.offset_action_param1 %}
+                 {% else %}
+                    {% url offset_action.offset_action %}
+                 {% endif %}
+                 ">
+                     <input type="hidden" name="offset" value="{{offset_params.offset_next.offset}}">
+                     {% if offset_params.search %}
+                     <input type="hidden" name="search" value="{{offset_params.search}}">
+                     {% endif %}"
+                     <button class="btn btn-primary" type="submit">
+                         Вперед
+                     </button>
+                </form>
+             </div>
+        {% endif %}
+    </div>
+    {% endif %}
     {% if view_info_menu %}
     <hr style="color: green; margin-left: 1%; width:98%; margin-bottom: 0px;">
     <table class="table table-bordered border-light-subtle" style="margin-left: 1%; width:98%; margin-bottom: 0px;">
@@ -120,8 +166,6 @@
         </tbody>
     </table>
     {% endif %}
-    {% block buttons %}
-    {% endblock %}
 </div>
 </body>
 </html>

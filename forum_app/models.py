@@ -39,18 +39,21 @@ def process_comment_upload(instance: 'Comments', filename: str) -> str:
 class Comments(models.Model):
     topic = models.ForeignKey('Topic', on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    comment = models.CharField(validators=[MinLengthValidator(5), MaxLengthValidator(2048)], max_length=2048, null=True)
+    comment = models.CharField(validators=[MinLengthValidator(5)], max_length=2048, null=True)
     upload = models.ImageField(upload_to=process_comment_upload, null=True)
     time_added = models.DateTimeField(auto_now_add=True)
 
     def get_upload_link(self):
         return get_image_link(self.upload)
 
+    class Meta:
+        ordering = ("time_added",)
+
 
 class Topic(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="author")
-    title = models.CharField(validators=[MinLengthValidator(8), MaxLengthValidator(100)], max_length=100, null=True)
-    question = models.TextField(validators=[MinLengthValidator(5), MaxLengthValidator(2048)], max_length=2048, null=True)
+    title = models.CharField(validators=[MinLengthValidator(8)], max_length=100, null=True)
+    question = models.TextField(validators=[MinLengthValidator(5)], max_length=2048, null=True)
     upload = models.ImageField(upload_to=process_topic_upload, null=True)
     section = models.CharField(choices=Sections.Sections, max_length=10, default=Sections.GENERAL)
     views = models.PositiveIntegerField(default=0)
@@ -65,10 +68,13 @@ class Topic(models.Model):
     @property
     def comments(self) -> QuerySet[Comments]:
         return (Comments.objects.select_related("author").only
-                ("author__username", "comment", "upload", "time_added").filter(topic=self))
+                ("author__username", "author__id", "comment", "upload", "time_added").filter(topic=self))
 
     class Meta:
         ordering = ("-time_added",)
+
+    def __str__(self):
+        return f"{self.author} topic about '{self.title}'"
 
 
 @receiver(pre_delete, sender=Topic)

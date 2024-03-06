@@ -46,16 +46,16 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].help_text = "Имя пользователя должно быть 5<=длина имени<=25, " \
-                                            "не может состоять только из чисел"
+                                            "не может состоять только из чисел."
         self.fields['password1'].help_text = "Пароль должен быть 8<=длина пароля<=64, " \
                                              "быть не простым, состоять не только из чисел."
         self.fields["password2"].help_text = "Повторите пароль."
         self.fields["username"].label = "Имя пользователя"
         self.fields["password1"].label = "Пароль"
-        self.fields["password2"].label = "Подтверждение пароляв"
+        self.fields["password2"].label = "Подтверждение пароля"
 
-        for field, input in {"username": TextInput, "password1": PasswordInput, "password2": PasswordInput}.items():
-            self.fields[field].widget = input(attrs={
+        for field, input_ in {"username": TextInput, "password1": PasswordInput, "password2": PasswordInput}.items():
+            self.fields[field].widget = input_(attrs={
                 'style': 'background-color: rgb(20, 20, 20); color: rgb(204, 204, 204)'
             })
 
@@ -74,3 +74,18 @@ class RegisterForm(UserCreationForm):
             raise forms.ValidationError("Пароль должен быть 8<=длина пароля<=64.")
 
         return password1
+
+
+class ChangeSignatureForm(forms.ModelForm):
+    class Meta:
+        model = UserSettings
+        fields = ("signature",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["signature"].label = "Ваша подпись:"
+        self.fields["signature"].widget = forms.TextInput(attrs={"placeholder": "Подпись"})
+        self.fields["signature"].required = False
+
+    def __call__(self, *args, **kwargs):
+        return ChangeSignatureForm(*args, **kwargs)

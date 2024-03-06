@@ -13,7 +13,9 @@
 <h2 class="indent" style="color:rgb(179, 179, 179);">Заполните поля для добавления темы!</h2>
 
 {% if flag_error %}
-     <h3 class="indent text-danger">Некоторые поля указаны неверно.</h3>
+     <div class="p-3 bg-info bg-opacity-10 border border-danger border-start-0 rounded-end indent" style="width: 40%;">
+         <h3 class="indent text-danger">{{flag_error}}</h3>
+     </div>
 {% endif %}
 
 <form method="POST" enctype="multipart/form-data">
