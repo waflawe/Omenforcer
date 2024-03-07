@@ -4,7 +4,7 @@ Django REST Framework, Celery + Redis, PostgreSQL.
 
 ## Установка
 ```commandline
-https://github.com/waflawe/django-forum.git
+git clone https://github.com/waflawe/django-forum.git
 cd django-forum
 ```
 
