@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.urls import reverse, reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse
 
-from forum_app.models import Topic, Comments
-from services.common_utils import get_user_avatar_path, get_crop_upload_path, RequestHost
+from services.common_utils import get_user_avatar_path, get_crop_upload_path
 from services.forum_mixins import *
-from home_app.models import UserSettings
+from services.schemora.settings import get_user_settings_model
 from forum.settings import MEDIA_ROOT
 from forum_app.forms import AddTopicForm, AddCommentForm
 
@@ -18,6 +16,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 Username = str
+UserSettings = get_user_settings_model()
 
 
 @dataclass
@@ -86,9 +85,8 @@ class SomeIdUtils(BaseContextMixin):
             section=section, **self.static_context_variables
         )
         context["comments"] = self._comments_to_dict(context["offset_params"]["offset"], context["comments"])
-        self._process_comments(context["comments"]) if len(context["comments"]) > 0 else None
+        self._process_comments(context["comments"])
         context["topic"], context["any_random_integer"] = topic, randrange(100000)
-        context["tzone"] = user_settings.timezone
         return context
 
     def _process_comments(self, comments: Dict[str, TopicOrCommentObject]) -> Literal[None]:
@@ -138,6 +136,7 @@ class SomeIdUtils(BaseContextMixin):
 
 
 class AddTopicViewUtils(AddInstanceMixin):
+    request_host = RequestHost.VIEW
     validation_class = AddTopicForm
 
     def add_topic_view_utils(self, view_self, request: HttpRequest) -> HttpResponse:
@@ -149,6 +148,7 @@ class AddTopicViewUtils(AddInstanceMixin):
 
 
 class AddCommentViewUtils(AddInstanceMixin):
+    request_host = RequestHost.VIEW
     validation_class = AddCommentForm
 
     def add_comment_view_utils(self, section: str, ids: int, flag_error: bool) -> Context:

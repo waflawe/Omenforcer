@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from home_app import views
 
 app_name = "home_app"
 
@@ -11,7 +11,7 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("settings/", views.SettingsView.as_view(), name="settings"),
     path("account/<str:username>/", views.SomeUserView.as_view(), name="some_user"),
-    path("account/like/<int:ids>/", views.LikeView.as_view(), name="like"),
-    path("account/dislike/<int:ids>/", views.DislikeView.as_view(), name="dislike"),
-    path("account/drop_review/<int:ids>/", views.DropView.as_view(), name="drop")
+    path("account/like/<str:username>/", views.LikeView.as_view(), name="like"),
+    path("account/dislike/<str:username>/", views.DislikeView.as_view(), name="dislike"),
+    path("account/drop_review/<str:username>/", views.DropView.as_view(), name="drop")
 ]

@@ -8,16 +8,19 @@ from django.contrib.auth.models import User
 from django import forms
 from rest_framework.request import Request
 
-from services.common_utils import get_user_avatar_path, Context, RequestHost
+from services.common_utils import get_user_avatar_path, Context
+from services.forum_mixins import BaseContextMixin
 from services.home_mixins import UpdateSettingsMixin, AddReviewMixin, GetUserReviewsInformationMixin
 from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm, ChangeSignatureForm
-from home_app.models import UserRating, UserSettings
-from services.user_settings_core import E
-from services.forum_mixins import BaseContextMixin
+from home_app.models import UserRating
+from services.schemora.settings import E, get_user_settings_model
+from services.schemora.mixins import RequestHost
 
 from random import randrange
 from typing import Literal, NoReturn, Type, Dict
 import pytz
+
+UserSettings = get_user_settings_model()
 
 
 def check_is_user_auth(request: HttpRequest | Request) -> bool:
@@ -41,6 +44,8 @@ class SomeUserViewUtils(AddReviewMixin, BaseContextMixin, GetUserReviewsInformat
     def some_user_view_utils(self, request: HttpRequest, username: str) -> Context | E:
         context = self.get_base_context(request, get_tzone=True)
         flag, user = self.check_perms(request, {"username": username})
+        if not user:
+            raise Http404
         image, user_settings = get_user_avatar_path(user)
         return context | self.get_user_reviews_info(request.user, user) | {
             "user": user,
@@ -80,8 +85,10 @@ class RegisterViewUtils(object):
 
 
 class SettingsViewUtils(UpdateSettingsMixin):
-    forms: Dict[str, Type[forms.ModelForm] | forms.ModelForm] = {"avatar_form": UploadAvatarForm,
-                                                                 "signature_form": ChangeSignatureForm}
+    forms: Dict[str, Type[forms.ModelForm] | forms.ModelForm] = {
+        "avatar_form": UploadAvatarForm,
+        "signature_form": ChangeSignatureForm
+    }
     request_host = RequestHost.VIEW
 
     def settings_view_get_utils(self, request: HttpRequest, flag_success: bool, flag_error: bool) -> Context:

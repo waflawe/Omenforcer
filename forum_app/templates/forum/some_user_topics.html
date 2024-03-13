@@ -12,7 +12,11 @@
 {% block body %}
 <br>
 <h2 class="indent" style="color:rgb(179, 179, 179);">Ваши темы.</h2>
-<br>
+{% if search_keys %}
+<h6 class="indent text-white">Найдено: {{ all_topics_count }}</h6>
+{% else %}
+<h6 class="indent text-white">Всего: {{ all_topics_count }}</h6>
+{% endif %}
 {% if all_topics|length > 0 %}
      <table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
          <thead>

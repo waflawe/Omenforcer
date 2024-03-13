@@ -1,7 +1,7 @@
 {% extends 'main.html' %}
 {% load tz %}
 
-{% block title %}{{ topic.title }}{% endblock %}
+{% block title %}{{ topic.obj.title }}{% endblock %}
 
 {% block links %}
 <link rel="stylesheet" href="{{MEDIA_URL}}f.css">
@@ -67,8 +67,10 @@
                  {% autoescape off %}
                  {{ topic.obj.question|linebreaks}}
                  {%endautoescape%}
+                 {% if topic.user_signature %}
                  <hr style="color: green">
                  <span class="text-secondary">{{topic.user_signature}}</span>
+                 {% endif %}
              </td>
              {% if topic.path_to_crop_upload %}
              <td align="middle">
@@ -131,8 +133,10 @@
                          {% autoescape off %}
                          {{ comment.obj.comment|linebreaks}}
                          {%endautoescape%}
+                         {% if comment.user_signature %}
                          <hr style="color: green">
                          <span class="text-secondary">{{comment.user_signature}}</span>
+                         {% endif %}
                      </td>
                      {% if comment.url_to_upload %}
                      <td align="middle">

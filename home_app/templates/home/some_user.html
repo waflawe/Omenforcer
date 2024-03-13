@@ -67,19 +67,19 @@
     <h5 class="text-white indent">Вы можете оценить этого камрада!</h5>
 <div class="indent text-white">
     <div style="display: inline-block;">
-        <form method="post" action='{% url "home_app:like" user.pk %}'>
+        <form method="post" action='{% url "home_app:like" user.username %}'>
             {% csrf_token %}
             <button type="submit" class="btn btn-success">Лайк</button>
         </form>
     </div>
     <div style="display: inline-block;">
-        <form method="post" action='{% url "home_app:dislike" user.pk %}'>
+        <form method="post" action='{% url "home_app:dislike" user.username %}'>
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Дизлайк</button>
         </form>
     </div>
     <div style="display: inline-block;">
-        <form method="post" action='{% url "home_app:drop" user.pk %}'>
+        <form method="post" action='{% url "home_app:drop" user.username %}'>
             {% csrf_token %}
             <button type="submit" class="btn btn-primary">Сбросить</button>
         </form>

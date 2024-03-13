@@ -3,8 +3,24 @@ from django.contrib.auth.models import User
 from django import forms
 from django.forms import TextInput, PasswordInput
 
-from home_app.models import UserSettings
-from services.common_utils import clean_custom_user_avatars_dir
+from services.schemora.settings import get_user_settings_model
+from forum.settings import MEDIA_ROOT, CUSTOM_USER_AVATARS_DIR, BASE_DIR
+
+import os
+from typing import Literal
+
+UserSettings = get_user_settings_model()
+
+
+def clean_custom_user_avatars_dir(user: User) -> Literal[None]:
+    """ Функция для очищения папки с кастомными аватарками пользователя. Используется при обновлении аватарки. """
+
+    path_to_avatar_dir = f"{MEDIA_ROOT}{CUSTOM_USER_AVATARS_DIR}/{user.pk}/"
+    try:
+        for file in os.listdir(BASE_DIR / path_to_avatar_dir):
+            os.remove(os.path.join(BASE_DIR, path_to_avatar_dir, file))
+    except FileNotFoundError:
+        pass
 
 
 class AuthForm(forms.Form):

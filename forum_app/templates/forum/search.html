@@ -12,6 +12,9 @@
 {% block body %}
 <br>
 <h1 class="indent text-white" style="text-align: center">Поиск</h1>
+{% if search_keys %}
+<h6 class="indent text-white">Найдено: {{ all_topics_count }}</h6>
+{% endif %}
 {% if all_topics %}
 <table class="table border-success table-bordered table-dark table-striped" style="margin-left: 1%; width:98%">
      <thead>

@@ -18,10 +18,11 @@ ALLOWED_HOSTS: List[str] = env("ALLOWED_HOSTS").split(", ")
 INSTALLED_APPS = [
     "forum_app.apps.ForumAppConfig",
     "home_app.apps.HomeAppConfig",
+    "apiv1.apps.Apiv1Config",
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
-    "apiv1.apps.Apiv1Config",
+    'drf_spectacular',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -80,12 +81,18 @@ DATABASES = {
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 
-# DEFAULT PROJECT WORK SETTINGS
+# DEFAULT PROJECT RUNTIME SETTINGS
 DEFAULT_USER_TIMEZONE = "Default"
 DEFAULT_USER_AVATAR_FILENAME = "default-user-icon.jpg"
 CUSTOM_USER_AVATARS_DIR = "avatars"
 CUSTOM_TOPIC_UPLOADS_DIR = "t_images"
 CUSTOM_COMMENT_UPLOADS_DIR = "c_images"
+
+SCHEMORA_SETTINGS = {
+    "USER_SETTINGS_MODEL": "home_app.models.UserSettings",
+    "SERIALIZERS_MODULE": "apiv1.serializers",
+    "FORMS_MODULE": "home_app.forms"
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -140,5 +147,11 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication"
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 20
+    "PAGE_SIZE": 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Django Simple Forum",
+    'VERSION': '1.1.0'
 }

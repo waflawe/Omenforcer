@@ -1,7 +1,6 @@
-from typing import NamedTuple, Type, Optional
+from services.schemora.src.types import E, ErrorMessage
 
-E = int
-ErrorMessage = str
+from typing import NamedTuple, Optional, Type
 
 
 class Field(NamedTuple):
@@ -20,16 +19,16 @@ class Error(NamedTuple):
 
 
 class ValidationClasses(NamedTuple):
-    """ Информация о классах-валидаторах данной настройки на WEB'e и API. """
+    """ Информация о классах-валидаторах определенной настройки на WEB'e и API. """
 
-    web_validation_class: Type
-    api_validation_class: Type
+    web_validation_class: str
+    api_validation_class: str
 
 
 class Handler(NamedTuple):
     """ Информация об обработчике настройки. """
 
-    handler: Type
+    handler: Type   # ссылка на класс - наследник абстрактного класса schemora.handlers.BaseHandler
     validation_classes: Optional[ValidationClasses] = None
 
 
@@ -41,12 +40,4 @@ class Setting(NamedTuple):
     handler: Handler
 
     def __str__(self):
-        return f"{self.field.field.capitalize()} field with {self.handler.handler.handle} handler"
-
-
-def include_setting(*args, **kwargs) -> Setting:
-    return Setting(
-        Field(kwargs["field"]),
-        Error(E(kwargs["error_code"]), kwargs.get("error_message", None)),
-        Handler(kwargs["handler"], kwargs.get("validation_classes", None))
-    )
+        return f"{self.field.field.capitalize()} field with {self.handler.handler} handler"

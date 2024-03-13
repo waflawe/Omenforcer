@@ -1,7 +1,7 @@
 from django import forms
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 
-from forum_app.models import Topic, Comments
+from forum_app.models import Topic, Comment
 
 
 class AddTopicForm(forms.ModelForm):
@@ -54,7 +54,7 @@ class AddCommentForm(forms.ModelForm):
         self.fields["upload"].required = False
 
     class Meta:
-        model = Comments
+        model = Comment
         fields = ("comment", "upload")
 
         labels = {

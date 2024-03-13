@@ -7,12 +7,14 @@ from rest_framework.request import Request
 from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
 
-from home_app.models import UserSettings, Review, UserRating
+from home_app.models import Review, UserRating
 from services.user_settings import settings
-from services.user_settings_core import Setting, E, ErrorMessage
+from services.schemora.settings import Setting, E, ErrorMessage, get_user_settings_model
 from error_messages.home_error_messages import Ratings
 
 from typing import Dict, Literal, NamedTuple, Union, Tuple, Optional
+
+UserSettings = get_user_settings_model()
 
 
 class UpdateSettingsReturn(NamedTuple):
@@ -59,8 +61,8 @@ class UpdateSettingsMixin(object):
 
 class _ReviewOperationPermissionsMixin:
     """
-    Миксин для проверки прав текущего пользователя на добавление/изменение/удаление отзыва
-    на другого форумчанина.
+    Миксин для проверки прав текущего пользователя на
+    добавление/изменение/удаление отзыва на другого форумчанина.
     """
 
     def check_perms(self, request: HttpRequest | Request, user_identifier: Dict) \
@@ -77,9 +79,9 @@ class _ReviewOperationPermissionsMixin:
 class AddReviewMixin(_ReviewOperationPermissionsMixin):
     """ Миксин для добавления/изменения отзыва. """
 
-    def add_review(self, request: HttpRequest | Request, ids: int, like: Optional[bool] = True) \
+    def add_review(self, request: HttpRequest | Request, user_identifier: Dict, like: Optional[bool] = True) \
             -> Tuple[Literal[None] | E, User]:
-        flag, user = self.check_perms(request, {"pk": ids})
+        flag, user = self.check_perms(request, user_identifier)
         if isinstance(flag, E): return flag, user
         review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
         user_reviews, _ = UserRating.objects.get_or_create(user=user)
@@ -94,8 +96,9 @@ class AddReviewMixin(_ReviewOperationPermissionsMixin):
 class DropReviewMixin(_ReviewOperationPermissionsMixin):
     """ Миксин для удаления отзыва. """
 
-    def drop_review(self, request: HttpRequest | Request, ids: int, **kwargs) -> Tuple[Literal[None] | E, User]:
-        flag, user = self.check_perms(request, {"pk": ids})
+    def drop_review(self, request: HttpRequest | Request, user_identifier: Dict, **kwargs) \
+            -> Tuple[Literal[None] | E, User]:
+        flag, user = self.check_perms(request, user_identifier)
         if isinstance(flag, E): return flag, user
         if not flag: return E(4), user
         review, user_reviews, _ = flag, *UserRating.objects.get_or_create(user=user)

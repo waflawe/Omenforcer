@@ -1,5 +1,5 @@
 from typing import Dict
-from services.user_settings_core import ErrorMessage
+from services.schemora.settings import ErrorMessage
 
 ModelField = str
 FieldsErrors = Dict[ModelField, ErrorMessage]
@@ -20,6 +20,7 @@ class _Topics:
 
 TOPICS_ERRORS: FieldsErrors = {
     "id": _Topics.INVALID_ID,
+    "topic": _Topics.INVALID_ID,
     "title": _Topics.INVALID_TITLE,
     "question": _Topics.INVALID_QUESTION,
     "upload": _Topics.INVALID_UPLOAD,

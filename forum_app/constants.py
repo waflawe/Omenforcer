@@ -1,3 +1,8 @@
+from error_messages.forum_error_messages import ModelField
+
+from typing import Dict
+
+
 class Sections(object):
     GENERAL = "general"
     TEMPLATES = "templates"
@@ -21,7 +26,7 @@ class Sections(object):
 
 
 class SearchParamsExpressions(object):
-    Params = {"title": "title", "question": "question", "username": "author__username"}
+    Params: Dict[str, ModelField] = {"title": "title", "question": "question", "username": "author__username"}
 
 
 dict_sections = {key: value for key, value in Sections.Sections}

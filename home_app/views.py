@@ -25,46 +25,50 @@ class _ReviewOperationOnErrorMixin(View):
 
 
 class AddReviewView(_ReviewOperationOnErrorMixin, AddReviewMixin):
-    def make_add_review(self, request: HttpRequest, ids: int, like: Optional[bool] = True) -> HttpResponse:
-        flag, user = self.add_review(request, ids, like)
+    def make_add_review(self, request: HttpRequest, username: str, like: Optional[bool] = True) -> HttpResponse:
+        flag, user = self.add_review(request, {"username": username}, like)
         error_redirect = check_flag(self, user, flag)
         return error_redirect if error_redirect else self.on_error(user, None)
 
 
 class LikeView(AddReviewView):
-    def post(self, request: HttpRequest, ids: int) -> HttpResponse:
-        return self.make_add_review(request, ids)
+    def post(self, request: HttpRequest, username: str) -> HttpResponse:
+        return self.make_add_review(request, username)
 
 
 class DislikeView(AddReviewView):
-    def post(self, request: HttpRequest, ids: int) -> HttpResponse:
-        return self.make_add_review(request, ids, like=False)
+    def post(self, request: HttpRequest, username: str) -> HttpResponse:
+        return self.make_add_review(request, username, like=False)
 
 
 class DropView(_ReviewOperationOnErrorMixin, DropReviewMixin):
-    def post(self, request: HttpRequest, ids: int) -> HttpResponse:
-        flag, user = self.drop_review(request, ids)
+    def post(self, request: HttpRequest, username: str) -> HttpResponse:
+        flag, user = self.drop_review(request, {"username": username})
         error_redirect = check_flag(self, user, flag)
         return error_redirect if error_redirect else self.on_error(user, None)
 
 
 class SomeUserView(View):
     def get(self, request: HttpRequest, username: str) -> HttpResponse:
+        context = SomeUserViewUtils().some_user_view_utils(request, username)
         error_code = request.GET.get("show_error", False)
         try:
             error = {"error_message": get_rating_operation_error_message(int(error_code)) if error_code else None}
         except ValueError:
             error = {"error_message": None}
-        return render(request, "home/some_user.html", context=SomeUserViewUtils()
-                      .some_user_view_utils(request, username) | error)
+        return render(request, "home/some_user.html", context=context | error)
 
 
 class AuthView(View):
     def get(self, request: HttpRequest, flag_error: Optional[bool] = False,
             form: Optional[Dict] = None) -> HttpResponse:
         if check_is_user_auth(request): return redirect("/")
-        return render(request, "home/auth.html", context={"form": AuthForm(form), "flag_error": flag_error,
-                                                          "show_success": request.GET.get("show_success", False)})
+        context = {
+            "form": AuthForm(form),
+            "flag_error": flag_error,
+            "show_success": request.GET.get("show_success", False)
+        }
+        return render(request, "home/auth.html", context=context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
         if check_is_user_auth(request): return redirect("/")
@@ -81,7 +85,8 @@ class LogoutView(View):
 class RegisterView(View):
     def get(self, request: HttpRequest, flag: Optional[bool] = False, form: Optional[Dict] = None) -> HttpResponse:
         if check_is_user_auth(request): return redirect("/")
-        return render(request, "home/register.html", context={"form": RegisterForm(form), "flag": flag})
+        context = {"form": RegisterForm(form), "flag": flag}
+        return render(request, "home/register.html", context=context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
         if check_is_user_auth(request): return redirect("/")

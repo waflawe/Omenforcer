@@ -1,0 +1,890 @@
+openapi: 3.0.3
+info:
+  title: Django Simple Forum
+  version: 1.1.0
+paths:
+  /api/v1/add_comment/:
+    post:
+      operationId: api_v1_add_comment_create
+      description: Добавление комментария к теме по ее id.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Comment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Comment'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/dislike_user/{ids}/:
+    post:
+      operationId: api_v1_dislike_user_create
+      description: Позволяет дизлайкнуть пользователя по его id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/drop_review/{ids}/:
+    post:
+      operationId: api_v1_drop_review_create
+      description: Позволяет сбросить оценку пользователя по его id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/like_user/{ids}/:
+    post:
+      operationId: api_v1_like_user_create
+      description: Позволяет лайкнуть пользователя по его id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/schema/:
+    get:
+      operationId: api_v1_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/sections/:
+    get:
+      operationId: api_v1_sections_retrieve
+      description: Возвращает все секции форума.
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sections'
+          description: ''
+  /api/v1/sections/{section}/:
+    get:
+      operationId: api_v1_sections_list
+      description: Получение топиков по конкретной секции форума.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: path
+        name: section
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopicsList'
+          description: ''
+  /api/v1/topics/:
+    get:
+      operationId: api_v1_topics_list
+      description: Вьюсет для отображения всех, отображения одной, удаления, создания
+        тем на форуме.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopicsList'
+          description: ''
+    post:
+      operationId: api_v1_topics_create
+      description: Создание новой темы на форуме.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topics'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Topics'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Topics'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/topics/{ids}/:
+    get:
+      operationId: api_v1_topics_retrieve
+      description: Получение темы по ее id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic.
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+    delete:
+      operationId: api_v1_topics_destroy
+      description: Удаление темы по ее id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic.
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/topics/{ids}/comments/:
+    get:
+      operationId: api_v1_topics_comments_list
+      description: Получение комментариев к конкретной теме форума.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommentList'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/update_settings/:
+    post:
+      operationId: api_v1_update_settings_create
+      description: Обновление настроек пользователя.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateSettings'
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /api/v1/user/{ids}/:
+    get:
+      operationId: api_v1_user_retrieve
+      description: Получение информации о пользователе по его id.
+      parameters:
+      - in: path
+        name: ids
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultError'
+          description: ''
+  /authorization/token/login/:
+    post:
+      operationId: authorization_token_login_create
+      description: Use this endpoint to obtain user authentication token.
+      tags:
+      - authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+      security:
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenCreate'
+          description: ''
+  /authorization/token/logout/:
+    post:
+      operationId: authorization_token_logout_create
+      description: Use this endpoint to logout user (remove user authentication token).
+      tags:
+      - authorization
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        topic:
+          type: integer
+        comment:
+          type: string
+          maxLength: 2048
+          minLength: 5
+        author:
+          type: integer
+          readOnly: true
+        upload:
+          type: string
+        time_added:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        author_signature:
+          type: string
+          readOnly: true
+      required:
+      - author
+      - author_signature
+      - comment
+      - id
+      - time_added
+      - topic
+    DefaultError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    PaginatedCommentList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+    PaginatedTopicsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Topics'
+    SectionEnum:
+      enum:
+      - general
+      - templates
+      - orm
+      - testing
+      - drf
+      - celery
+      - channels
+      - deploy
+      type: string
+      description: |-
+        * `general` - Общий
+        * `templates` - Шаблоны
+        * `orm` - Django ORM
+        * `testing` - Тестирование
+        * `drf` - DRF
+        * `celery` - Celery
+        * `channels` - Django Channels
+        * `deploy` - Deploy
+    Sections:
+      type: object
+      properties:
+        sections:
+          type: object
+          additionalProperties: {}
+      required:
+      - sections
+    TokenCreate:
+      type: object
+      properties:
+        password:
+          type: string
+        username:
+          type: string
+    TopicDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+          minLength: 8
+        question:
+          type: string
+          minLength: 5
+          maxLength: 2048
+        upload:
+          type: string
+        views:
+          type: integer
+          readOnly: true
+        comments_count:
+          type: integer
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        author_signature:
+          type: string
+          readOnly: true
+        section:
+          $ref: '#/components/schemas/SectionEnum'
+        time_added:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - author
+      - author_signature
+      - comments_count
+      - id
+      - question
+      - time_added
+      - title
+      - views
+    Topics:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+          minLength: 8
+        views:
+          type: integer
+          readOnly: true
+        comments_count:
+          type: integer
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        section:
+          $ref: '#/components/schemas/SectionEnum'
+        time_added:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - author
+      - comments_count
+      - id
+      - time_added
+      - title
+      - views
+    UpdateSettings:
+      type: object
+      properties:
+        timezone:
+          type: string
+          maxLength: 30
+        avatar:
+          type: string
+          format: uri
+        signature:
+          type: string
+          nullable: true
+          maxLength: 64
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        avatar:
+          type: string
+          readOnly: true
+        date_joined:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        last_login:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        rating:
+          type: integer
+          readOnly: true
+        reviews_count:
+          type: integer
+          readOnly: true
+        signature:
+          type: string
+          readOnly: true
+      required:
+      - avatar
+      - date_joined
+      - id
+      - last_login
+      - rating
+      - reviews_count
+      - signature
+      - username
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

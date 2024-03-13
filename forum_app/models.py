@@ -1,4 +1,4 @@
-from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.validators import MinLengthValidator
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
@@ -25,21 +25,21 @@ def get_image_link(upload: ImageFieldFile | Literal[None]) -> str | Literal[None
     try:
         return MEDIA_URL + upload.path.split(MEDIA_ROOT)[-1]
     except ValueError:
-        return
+        return ...
 
 
 def process_topic_upload(instance: 'Topic', filename: str) -> str:
     return f"{CUSTOM_TOPIC_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
 
 
-def process_comment_upload(instance: 'Comments', filename: str) -> str:
+def process_comment_upload(instance: 'Comment', filename: str) -> str:
     return f"{CUSTOM_COMMENT_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     topic = models.ForeignKey('Topic', on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    comment = models.CharField(validators=[MinLengthValidator(5)], max_length=2048, null=True)
+    comment = models.CharField(validators=[MinLengthValidator(5)], max_length=2048)
     upload = models.ImageField(upload_to=process_comment_upload, null=True)
     time_added = models.DateTimeField(auto_now_add=True)
 
@@ -52,8 +52,8 @@ class Comments(models.Model):
 
 class Topic(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="author")
-    title = models.CharField(validators=[MinLengthValidator(8)], max_length=100, null=True)
-    question = models.TextField(validators=[MinLengthValidator(5)], max_length=2048, null=True)
+    title = models.CharField(validators=[MinLengthValidator(8)], max_length=100)
+    question = models.TextField(validators=[MinLengthValidator(5)], max_length=2048)
     upload = models.ImageField(upload_to=process_topic_upload, null=True)
     section = models.CharField(choices=Sections.Sections, max_length=10, default=Sections.GENERAL)
     views = models.PositiveIntegerField(default=0)
@@ -66,8 +66,8 @@ class Topic(models.Model):
         return get_image_link(self.upload)
 
     @property
-    def comments(self) -> QuerySet[Comments]:
-        return (Comments.objects.select_related("author").only
+    def comments(self) -> QuerySet[Comment]:
+        return (Comment.objects.select_related("author").only
                 ("author__username", "author__id", "comment", "upload", "time_added").filter(topic=self))
 
     class Meta:
@@ -82,6 +82,6 @@ def topic_upload_delete(sender, instance, **kwargs):
     _delete_upload(instance.upload)
 
 
-@receiver(pre_delete, sender=Comments)
+@receiver(pre_delete, sender=Comment)
 def topic_upload_delete(sender, instance, **kwargs):
     _delete_upload(instance.upload)
