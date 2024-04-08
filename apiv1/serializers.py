@@ -1,47 +1,16 @@
 from __future__ import annotations
 
 from rest_framework import serializers
-from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth.models import User
 
 from forum_app.models import Topic, Comment, get_image_link
 from home_app.models import Review, UserRating
-from forum.settings import DEFAULT_USER_TIMEZONE
-from services.schemora.settings import get_user_settings_model
+from schemora.settings.helpers import get_user_settings_model, get_instance_datetime_attribute, get_user_settings
 from services.user_settings import settings
 
-import pytz
-from datetime import datetime
-from typing import Tuple, Any
-
 UserSettings = get_user_settings_model()
-
-
-def get_datetime_in_timezone(dt: datetime, timezone: str) -> Tuple[datetime, str]:
-    """ Получение datetime объекта в определенной временной зоне. """
-
-    dt = pytz.timezone(timezone).localize(datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
-    return (dt + dt.utcoffset()), timezone
-
-
-def get_instance_time_attribute(request: Request, instance: Any, attribute: str = "time_added"):
-    """ Получение DateTime атрибута объекта в выбранной временной зоне текущего пользователя. """
-
-    try:
-        dt, timezone = getattr(instance, attribute), "UTC"
-    except AttributeError as e:
-        raise RuntimeError(f"Invalid {instance.__class__.__name__} attribute: {attribute}") from e
-    user_timezone = UserSettings.objects.get(user=request.user).timezone if request.user.is_authenticated else (
-        DEFAULT_USER_TIMEZONE
-    )
-    if request.user.is_authenticated and user_timezone != DEFAULT_USER_TIMEZONE:
-        dt, timezone = get_datetime_in_timezone(dt, user_timezone)
-    return {
-        attribute: dt.strftime("%H:%M %d/%m/%Y"),
-        "time_zone": timezone,
-    }
 
 
 class SectionsSerializer(serializers.Serializer):
@@ -72,34 +41,28 @@ class _InstanceSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.DictField)
     def get_time_added(self, topic):
-        return get_instance_time_attribute(self.context["request"], topic)
+        return get_instance_datetime_attribute(self.context["request"].user, topic)
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_author_signature(self, comment):
-        return UserSettings.objects.get(user=comment.author).signature
+        return get_user_settings(comment.author).signature
 
 
-class _TopicBaseSerializer(_InstanceSerializer):
-    comments_count = serializers.SerializerMethodField()
-
-    @extend_schema_field(OpenApiTypes.INT)
-    def get_comments_count(self, topic):
-        return topic.comments.count()
-
-
-class TopicsSerializer(_TopicBaseSerializer):
+class TopicsSerializer(_InstanceSerializer):
     class Meta:
         model = Topic
-        fields = "id", "title", "views", "comments_count", "author", "section", "time_added"
-        read_only_fields = "id", "views", "comments_count", "author", "time_added"
+        fields = "id", "title", "views", "author", "section", "time_added"
+        read_only_fields = "id", "views", "author", "time_added"
 
 
-class TopicDetailSerializer(_TopicBaseSerializer):
+class TopicDetailSerializer(_InstanceSerializer):
     class Meta:
         model = Topic
-        fields = ("id", "title", "question", "upload", "views", "comments_count", "author", "author_signature",
-                  "section", "time_added")
-        read_only_fields = "id", "views", "comments_count", "author", "author_signature", "time_added"
+        fields = (
+            "id", "title", "question", "upload", "views", "author", "author_signature",
+            "section", "time_added"
+        )
+        read_only_fields = "id", "views", "author", "author_signature", "time_added"
 
 
 class CommentSerializer(_InstanceSerializer):
@@ -127,11 +90,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.DictField)
     def get_date_joined(self, user):
-        return get_instance_time_attribute(self.context["request"], user, attribute="date_joined")
+        return get_instance_datetime_attribute(self.context["request"].user, user, attribute="date_joined")
 
     @extend_schema_field(serializers.DictField)
     def get_last_login(self, user):
-        return get_instance_time_attribute(self.context["request"], user, attribute="last_login")
+        return get_instance_datetime_attribute(self.context["request"].user, user, attribute="last_login")
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_rating(self, user):
@@ -144,15 +107,3 @@ class UserSerializer(serializers.ModelSerializer):
     @extend_schema_field(OpenApiTypes.STR)
     def get_signature(self, user):
         return self.context["settings"].signature
-
-
-class UserAvatarSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserSettings
-        fields = "avatar",
-
-
-class SignatureSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserSettings
-        fields = "signature",

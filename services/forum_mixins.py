@@ -4,16 +4,19 @@ from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.core.cache import cache
+from django.conf import settings
 
 from forum_app.models import Topic, Comment
 from forum_app.constants import dict_sections, SearchParamsExpressions
 from services.common_utils import Context
-from services.schemora.mixins import DataValidationMixin, RequestHost
-from services.schemora.settings import get_user_settings_model
+from schemora.core.mixins import DataValidationMixin
+from schemora.core.enums import RequestHost
+from schemora.settings.helpers import get_user_settings_model, get_user_timezone
 from tasks.home_app_tasks import make_center_crop
 from error_messages.forum_error_messages import TOPICS_ERRORS, COMMENTS_ERRORS, ErrorMessage
 
-from typing import Optional, NoReturn, NamedTuple, Tuple, Sized, Literal, Iterable, Dict
+from typing import Optional, NoReturn, NamedTuple, Tuple, Sized, Literal, Iterable, Dict, List
 from dataclasses import dataclass
 
 ReverseURL = str
@@ -75,12 +78,6 @@ class OffsetAction(NamedTuple):
     offset_action_param2: Optional[str] = None
 
 
-def get_timezone(request: HttpRequest) -> Literal[False] | str:
-    if request.user.is_authenticated:
-        return UserSettings.objects.get(user=request.user).timezone
-    return False
-
-
 def validate_section(section: str, topic: Optional[Topic] = None, raise_exception: bool = True) -> NoReturn | str:
     """ Функция для проверки соответствия переданной секции форума с секцией конкретной темы. """
 
@@ -94,7 +91,10 @@ def validate_section(section: str, topic: Optional[Topic] = None, raise_exceptio
 def get_topic_and_validate_section(ids: int, section: Optional[str] = None) -> Tuple[Topic, str]:
     """ Функция для получения темы по ее ids и проверки ее секции на соответствие секции, переданной пользователем. """
 
-    topic_fields = "id", "title", "question", "time_added", "upload", "author", "section", "views"
+    topic_fields = (
+        "id", "title", "question", "time_added", "upload", "author__username",
+        "author__date_joined", "section", "views"
+    )
     topic_q = Topic.objects.select_related("author").only(*topic_fields).filter(pk=ids)
     topic = topic_q.first()
     if not topic:
@@ -117,6 +117,25 @@ def get_and_validate_offset(request: HttpRequest, instance: Sized) -> int:
     return offset
 
 
+def get_general_forum_information() -> List:
+    info = []
+
+    for cache_name, getter in {
+        settings.LAST_JOINED_CACHE_NAME: User.objects.order_by("-date_joined").first,
+        settings.TOTAL_TOPICS_CACHE_NAME: Topic.objects.count,
+        settings.TOTAL_COMMENTS_CACHE_NAME: Comment.objects.count
+    }.items():
+        value = cache.get(cache_name)
+        if value:
+            info.append(value)
+        else:
+            res = getter()
+            cache.set(cache_name, res, 60*60)
+            info.append(res)
+
+    return info
+
+
 class BaseContextMixin(object):
     """ Класс для удобного формирования базового контекста. """
 
@@ -134,12 +153,13 @@ class BaseContextMixin(object):
         for template_name, arg_name in self.static_base_context_variables.items():
             context[template_name] = kwargs.get(arg_name)
         if kwargs.get("get_tzone", False):
-            context["tzone"] = get_timezone(request)
+            context["tzone"] = get_user_timezone(request.user)
         if kwargs.get("view_info_menu", False):
-            context["view_info_menu"], context["last_joined"] = True, User.objects.order_by("-date_joined").first()
+            info = get_general_forum_information()
+            context["view_info_menu"], context["last_joined"] = True, info[0]
             context["tzone"] = "UTC" if context["tzone"] in ("Default", False) else context["tzone"]
-            context["total_topics"] = Topic.objects.count()
-            context["total_messages"] = context["total_topics"] + Comment.objects.count()
+            context["total_topics"] = info[1]
+            context["total_messages"] = info[1] + info[2]
         if not queryset is False:
             objects, offset, offset_next, offset_back = self._clip_topics_and_get_offset_params(request, queryset)
             context[kwargs["queryset_context_alias"]] = objects if len(objects) > 0 else tuple()
@@ -216,6 +236,9 @@ class DeleteTopicMixin(object):
         for comment in topic.comments:
             comment.delete()
         topic.delete()
+        cache.delete(settings.TOTAL_TOPICS_CACHE_NAME)
+        cache.delete(settings.TOTAL_COMMENTS_CACHE_NAME)
+        cache.delete(settings.AGGREGATE_COUNT_CACHE_NAME)
 
     def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Topic | NoReturn | False:
         topic = get_object_or_404(Topic, pk=ids)
@@ -242,6 +265,8 @@ class AddInstanceMixin(DataValidationMixin):
             instance = v.save()
             if instance.upload:
                 make_center_crop.delay(instance.upload.path)
+            cache.delete(settings.TOTAL_TOPICS_CACHE_NAME if not topic else settings.TOTAL_COMMENTS_CACHE_NAME)
+            cache.delete(settings.AGGREGATE_COUNT_CACHE_NAME if not topic else None)
             return AddInstanceReturn(*((instance, None) if not topic else (kwargs["topic"], instance)))
         return self._get_error_return(instance, v, topic)
 

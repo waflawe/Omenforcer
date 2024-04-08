@@ -6,10 +6,10 @@ from django.db.models.fields.files import ImageFieldFile
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 from django.db.models import QuerySet
+from django.conf import settings
 
 from forum_app.constants import Sections
-from forum.settings import MEDIA_ROOT, MEDIA_URL, CUSTOM_TOPIC_UPLOADS_DIR, CUSTOM_COMMENT_UPLOADS_DIR
-from services.common_utils import get_crop_upload_path
+from schemora.settings.helpers import get_upload_crop_path
 
 from typing import Literal
 from os import remove
@@ -17,23 +17,23 @@ from os import remove
 
 def _delete_upload(upload: ImageFieldFile | Literal[None]) -> Literal[None]:
     if upload:
-        remove(get_crop_upload_path(upload.path))
+        remove(get_upload_crop_path(upload.path))
         upload.delete(False)
 
 
 def get_image_link(upload: ImageFieldFile | Literal[None]) -> str | Literal[None]:
     try:
-        return MEDIA_URL + upload.path.split(MEDIA_ROOT)[-1]
+        return settings.MEDIA_URL + upload.path.split(settings.MEDIA_ROOT)[-1]
     except ValueError:
-        return ...
+        return None
 
 
 def process_topic_upload(instance: 'Topic', filename: str) -> str:
-    return f"{CUSTOM_TOPIC_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
+    return f"{settings.CUSTOM_TOPIC_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
 
 
 def process_comment_upload(instance: 'Comment', filename: str) -> str:
-    return f"{CUSTOM_COMMENT_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
+    return f"{settings.CUSTOM_COMMENT_UPLOADS_DIR}/{instance.pk}.{filename.split('.')[-1]}"
 
 
 class Comment(models.Model):

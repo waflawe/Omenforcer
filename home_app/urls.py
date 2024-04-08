@@ -13,5 +13,5 @@ urlpatterns = [
     path("account/<str:username>/", views.SomeUserView.as_view(), name="some_user"),
     path("account/like/<str:username>/", views.LikeView.as_view(), name="like"),
     path("account/dislike/<str:username>/", views.DislikeView.as_view(), name="dislike"),
-    path("account/drop_review/<str:username>/", views.DropView.as_view(), name="drop")
+    path("account/dropreview/<str:username>/", views.DropView.as_view(), name="drop")
 ]

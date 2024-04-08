@@ -13,8 +13,6 @@ DEBUG = int(env("DEBUG"))
 
 ALLOWED_HOSTS: List[str] = env("ALLOWED_HOSTS").split(", ")
 
-# Application definition
-
 INSTALLED_APPS = [
     "forum_app.apps.ForumAppConfig",
     "home_app.apps.HomeAppConfig",
@@ -62,10 +60,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'forum.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -81,21 +75,10 @@ DATABASES = {
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 
-# DEFAULT PROJECT RUNTIME SETTINGS
-DEFAULT_USER_TIMEZONE = "Default"
-DEFAULT_USER_AVATAR_FILENAME = "default-user-icon.jpg"
+# PROJECT RUNTIME SETTINGS
 CUSTOM_USER_AVATARS_DIR = "avatars"
 CUSTOM_TOPIC_UPLOADS_DIR = "t_images"
 CUSTOM_COMMENT_UPLOADS_DIR = "c_images"
-
-SCHEMORA_SETTINGS = {
-    "USER_SETTINGS_MODEL": "home_app.models.UserSettings",
-    "SERIALIZERS_MODULE": "apiv1.serializers",
-    "FORMS_MODULE": "home_app.forms"
-}
-
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -112,9 +95,34 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": CELERY_BROKER_URL,
+        "TIMEOUT": 60*60
+    }
+}
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.1/topics/i18n/
+# CACHE VARIABLES NAMES
+LAST_JOINED_CACHE_NAME = "last_joined_user"
+TOTAL_TOPICS_CACHE_NAME = "total_topics_count"
+TOTAL_COMMENTS_CACHE_NAME = "total_comments_count"
+AGGREGATE_COUNT_CACHE_NAME = "aggregate_count_topics_in_sections"
+
+LOGGING = {
+    "version": 1,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler"
+        }
+    },
+    "loggers": {
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": env("DJANGO_LOG_LEVEL", default="DEBUG")
+        }
+    }
+}
 
 LANGUAGE_CODE = 'en-us'
 
@@ -124,18 +132,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = 'static/'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = 'media/'
-
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -154,4 +154,18 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Django Simple Forum",
     'VERSION': '1.1.0'
+}
+
+SCHEMORA_SETTINGS = {
+    "USER_SETTINGS": {
+        "USER_SETTINGS_MODEL": "home_app.models.UserSettings",
+        "DEFAULT_USER_AVATAR_FILENAME": "default-user-icon.jpg",
+        "SERIALIZERS_MODULE": "apiv1.serializers",
+        "FORMS_MODULE": "home_app.forms"
+    },
+    "CACHE": {
+        "USER_SETTINGS_CACHE_NAME": "settings",
+        "USER_SETTINGS_CACHE_TIMEOUT": 60 * 60 * 24 * 7,
+        "USER_DEFINED_CACHE_NAME_DELIMITER": "/"
+    }
 }

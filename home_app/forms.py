@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django import forms
 from django.forms import TextInput, PasswordInput
 
-from services.schemora.settings import get_user_settings_model
+from schemora.settings.helpers import get_user_settings_model
 from forum.settings import MEDIA_ROOT, CUSTOM_USER_AVATARS_DIR, BASE_DIR
 
 import os

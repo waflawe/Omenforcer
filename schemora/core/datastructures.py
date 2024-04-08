@@ -1,4 +1,4 @@
-from services.schemora.src.types import E, ErrorMessage
+from schemora.core.types import E, ErrorMessage
 
 from typing import NamedTuple, Optional, Type
 
@@ -28,7 +28,7 @@ class ValidationClasses(NamedTuple):
 class Handler(NamedTuple):
     """ Информация об обработчике настройки. """
 
-    handler: Type   # ссылка на класс - наследник абстрактного класса schemora.handlers.BaseHandler
+    handler: Type   # ссылка на класс - наследник абстрактного класса schemora.settings.handlers.BaseHandler
     validation_classes: Optional[ValidationClasses] = None
 
 

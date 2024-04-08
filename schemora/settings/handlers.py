@@ -1,6 +1,6 @@
-from services.schemora.settings import get_user_settings_model
-from services.schemora.src.types import E
-from services.schemora.src.datastructures import Setting
+from schemora.settings.helpers import get_user_settings_model
+from schemora.core.types import E
+from schemora.core.datastructures import Setting
 
 from abc import ABC, abstractmethod
 from typing import Literal

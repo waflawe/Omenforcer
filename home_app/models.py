@@ -1,19 +1,21 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.conf import settings
 
-from forum.settings import DEFAULT_USER_AVATAR_FILENAME, CUSTOM_USER_AVATARS_DIR, DEFAULT_USER_TIMEZONE
+from schemora.conf import schemora_settings
 
 
 def process_upload_user_avatar(instance: 'UserSettings', filename: str) -> str:
-    return f"{CUSTOM_USER_AVATARS_DIR}/{instance.user.pk}/{instance.user.pk}.{filename.split('.')[-1]}"
+    return f"{settings.CUSTOM_USER_AVATARS_DIR}/{instance.user.pk}/{instance.user.pk}.{filename.split('.')[-1]}"
 
 
 class UserSettings(models.Model):
     """ Модель настроек пользователя. """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    timezone = models.CharField(max_length=30, default=DEFAULT_USER_TIMEZONE)
-    avatar = models.ImageField(upload_to=process_upload_user_avatar, default=DEFAULT_USER_AVATAR_FILENAME)
+    timezone = models.CharField(max_length=30, default=schemora_settings.USER_SETTINGS.DEFAULT_USER_TIMEZONE)
+    avatar = models.ImageField(upload_to=process_upload_user_avatar,
+                               default=schemora_settings.USER_SETTINGS.DEFAULT_USER_AVATAR_FILENAME)
     signature = models.CharField(max_length=64, null=True)
 
 

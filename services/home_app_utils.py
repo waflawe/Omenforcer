@@ -7,14 +7,17 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 from django import forms
 from rest_framework.request import Request
+from django.core.cache import cache
+from django.conf import settings
 
-from services.common_utils import get_user_avatar_path, Context
+from services.common_utils import Context
 from services.forum_mixins import BaseContextMixin
 from services.home_mixins import UpdateSettingsMixin, AddReviewMixin, GetUserReviewsInformationMixin
 from home_app.forms import UploadAvatarForm, AuthForm, RegisterForm, ChangeSignatureForm
 from home_app.models import UserRating
-from services.schemora.settings import E, get_user_settings_model
-from services.schemora.mixins import RequestHost
+from schemora.core.types import E
+from schemora.settings.helpers import get_user_avatar_path, get_user_settings_model, get_user_settings
+from schemora.core.enums import RequestHost
 
 from random import randrange
 from typing import Literal, NoReturn, Type, Dict
@@ -79,6 +82,7 @@ class RegisterViewUtils(object):
             user = form.save()
             UserSettings.objects.create(user=user)
             UserRating.objects.create(user=user)
+            cache.delete(settings.LAST_JOINED_CACHE_NAME)
             return redirect(f"{reverse('home_app:auth')}?show_success=True")
 
         return view_self.get(request, True, request.POST)
@@ -92,7 +96,7 @@ class SettingsViewUtils(UpdateSettingsMixin):
     request_host = RequestHost.VIEW
 
     def settings_view_get_utils(self, request: HttpRequest, flag_success: bool, flag_error: bool) -> Context:
-        data = {"signature": UserSettings.objects.get(user=request.user).signature}
+        data = {"signature": get_user_settings(request.user).signature}
         self.forms["signature_form"] = self.forms["signature_form"](data)
         return Context({
             "tzs": pytz.common_timezones,

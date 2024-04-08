@@ -21,13 +21,12 @@ from services.home_mixins import (
     UpdateSettingsMixin, AddReviewMixin, DropReviewMixin, get_rating_operation_error_message
 )
 from services.home_app_utils import check_flag
-from services.schemora.mixins import RequestHost
-from services.schemora.settings import get_user_settings_model
+from schemora.settings.helpers import get_user_settings
+from schemora.core.enums import RequestHost
 from error_messages.forum_error_messages import TOPICS_ERRORS
 
 from typing import Optional, NamedTuple
 
-UserSettings = get_user_settings_model()
 review_operations_responses = {
     status.HTTP_201_CREATED: None,
     status.HTTP_400_BAD_REQUEST: DefaultErrorSerializer,
@@ -159,7 +158,7 @@ class GetUserAPIView(APIView):
     })
     def get(self, request: Request, ids: int) -> Response:
         user = get_object_or_404(User, pk=ids)
-        context = {"request": request, "settings": UserSettings.objects.get(user=user)}
+        context = {"request": request, "settings": get_user_settings(user)}
         data = self.serializer_class(user, context=context)
         return Response({"user": data.data}, status=status.HTTP_200_OK)
 

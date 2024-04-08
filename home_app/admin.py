@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from services.schemora.settings import get_user_settings_model
+from schemora.settings.helpers import get_user_settings_model
 
 UserSettings = get_user_settings_model()
 

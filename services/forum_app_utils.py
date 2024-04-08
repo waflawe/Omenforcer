@@ -3,11 +3,10 @@ from __future__ import annotations
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.db.models import Count
 
-from services.common_utils import get_user_avatar_path, get_crop_upload_path
 from services.forum_mixins import *
-from services.schemora.settings import get_user_settings_model
-from forum.settings import MEDIA_ROOT
+from schemora.settings.helpers import get_upload_crop_path, get_user_settings_model, get_user_avatar_path
 from forum_app.forms import AddTopicForm, AddCommentForm
 
 from random import randrange
@@ -38,9 +37,19 @@ class ForumHomeViewUtils(BaseContextMixin):
 
     def _get_extended_sections(self) -> List[ExtendedSection]:
         sections = []
+        url_aliases = dict_sections.keys()
+
+        aggregate_count = cache.get(settings.AGGREGATE_COUNT_CACHE_NAME)
+        if not aggregate_count:
+            aggregate_count_query = dict()
+            for url_alias in url_aliases:
+                aggregate_count_query[f"{url_alias}__count"] = Count("section", filter=Q(section=f"{url_alias}"))
+            aggregate_count = Topic.objects.aggregate(**aggregate_count_query)
+            cache.set(settings.AGGREGATE_COUNT_CACHE_NAME, aggregate_count, 60*60)
+
         for url_alias, name in dict_sections.items():
             section = ExtendedSection(name, url_alias)
-            section.all_topics_count = Topic.objects.filter(section=section.section_url_alias).count()
+            section.all_topics_count = aggregate_count[f"{url_alias}__count"]
             last_topic = (Topic.objects.select_related("author").only("time_added", "author__username")
                           .filter(section=section.section_url_alias).first())
             if last_topic:
@@ -108,8 +117,8 @@ class SomeIdUtils(BaseContextMixin):
 
         if avatar: obj.path_to_author_avatar, _ = get_user_avatar_path(user_settings)
         if obj.obj.upload != "":
-            obj.url_to_upload = obj.obj.upload.path.split(MEDIA_ROOT)[-1]
-            obj.path_to_crop_upload = get_crop_upload_path(str(obj.obj.upload))
+            obj.url_to_upload = obj.obj.upload.path.split(settings.MEDIA_ROOT)[-1]
+            obj.path_to_crop_upload = get_upload_crop_path(str(obj.obj.upload))
             obj.percents_of_tds_widths = PercentsOfTableData("20%", "65%", "15%")
         return obj
 

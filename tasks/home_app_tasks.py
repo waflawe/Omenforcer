@@ -1,5 +1,5 @@
 from forum.settings import BASE_DIR
-from services.common_utils import get_crop_upload_path
+from schemora.settings.helpers import get_upload_crop_path
 
 import os
 from celery import shared_task
@@ -13,7 +13,7 @@ def make_center_crop(applicant_avatar_path: str) -> Literal[None]:
     """ Таска для центрирования аватарки/вложения. """
 
     _center_crop(Image.open(os.path.join(BASE_DIR / applicant_avatar_path))).save(os.path.join(
-        get_crop_upload_path(applicant_avatar_path)
+        get_upload_crop_path(applicant_avatar_path)
     ))
 
 

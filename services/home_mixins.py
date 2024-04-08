@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 from django.http import HttpRequest
 from rest_framework.request import Request
 from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.cache import cache
 
 from home_app.models import Review, UserRating
 from services.user_settings import settings
-from services.schemora.settings import Setting, E, ErrorMessage, get_user_settings_model
+from schemora.core.types import E, ErrorMessage
+from schemora.core.datastructures import Setting
+from schemora.settings.helpers import get_user_settings_model
+from schemora.cache import get_cache_name_delimiter, get_user_settings_cache_name
 from error_messages.home_error_messages import Ratings
 
 from typing import Dict, Literal, NamedTuple, Union, Tuple, Optional
@@ -38,7 +41,7 @@ class UpdateSettingsMixin(object):
     request_host = None   # переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
 
     def update_settings(self, user: User, post: Dict, files: Dict) -> UpdateSettingsReturn:
-        flag_success, user_settings = False, get_object_or_404(UserSettings, user=user)
+        flag_success, user_settings = False, UserSettings.objects.select_related("user").get(user=user)
 
         for setting in settings:
             flag = self._process_setting(setting, user_settings, post, files)
@@ -55,6 +58,8 @@ class UpdateSettingsMixin(object):
             if setting.handler.handler().handle(setting, user_settings, post=post, files=files,
                                                 request_host=self.request_host):
                 return ProcessSettingReturn(True, setting.error.error_message)
+            delimiter = get_cache_name_delimiter()
+            cache.delete(f"{user_settings.user.pk}{delimiter}{get_user_settings_cache_name()}")
             return ProcessSettingReturn(False, True)
         return ProcessSettingReturn(False, False)
 
