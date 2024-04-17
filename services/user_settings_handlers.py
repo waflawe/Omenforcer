@@ -28,7 +28,7 @@ class AvatarHandlerBase(BaseHandler, BaseDataValidationHandlerMixin):
         make_center_crop.delay(obj.avatar.path)
 
     def get_data_to_serializer(self, data: Dict, files: Dict) -> Dict:
-        return data | files
+        return data
 
 
 class SignatureHandlerBase(BaseHandler, BaseDataValidationHandlerMixin):
@@ -38,4 +38,4 @@ class SignatureHandlerBase(BaseHandler, BaseDataValidationHandlerMixin):
         if isinstance(obj, E): return obj
 
     def get_data_to_serializer(self, data: Dict, files: Dict) -> Dict:
-        return data | files
+        return data
