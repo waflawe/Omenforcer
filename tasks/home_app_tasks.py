@@ -1,11 +1,12 @@
-from forum.settings import BASE_DIR
-from schemora.settings.helpers import get_upload_crop_path
-
 import os
+from typing import Literal
+
 from celery import shared_task
 from PIL import Image
 from PIL.Image import Image as Im
-from typing import Literal
+
+from forum.settings import BASE_DIR
+from schemora.settings.helpers import get_upload_crop_path
 
 
 @shared_task

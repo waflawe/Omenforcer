@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth.models import User
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
 
-from forum_app.models import Topic, Comment, get_image_link
+from forum_app.models import Comment, Topic, get_image_link
 from home_app.models import Review, UserRating
-from schemora.settings.helpers import get_user_settings_model, get_instance_datetime_attribute, get_user_settings
+from schemora.settings.helpers import get_instance_datetime_attribute, get_user_settings, get_user_settings_model
 from services.user_settings import settings
 
 UserSettings = get_user_settings_model()

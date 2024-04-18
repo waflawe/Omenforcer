@@ -1,6 +1,6 @@
-from error_messages.forum_error_messages import ModelField
-
 from typing import Dict
+
+from error_messages.forum_error_messages import ModelField
 
 
 class Sections(object):

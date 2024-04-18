@@ -1,10 +1,19 @@
-from django.urls import path, include
-from apiv1.api_views import (
-    TopicViewSet, UpdateSettingsApiView, GetSectionsAPIView, GetTopicCommentsAPIView, GetUserAPIView, AddCommentApiView,
-    GetSectionTopicsAPIView, DislikeAPIView, LikeAPIView, DropAPIView
-)
-from rest_framework.routers import SimpleRouter
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.routers import SimpleRouter
+
+from apiv1.api_views import (
+    AddCommentApiView,
+    DislikeAPIView,
+    DropAPIView,
+    GetSectionsAPIView,
+    GetSectionTopicsAPIView,
+    GetTopicCommentsAPIView,
+    GetUserAPIView,
+    LikeAPIView,
+    TopicViewSet,
+    UpdateSettingsApiView,
+)
 
 router = SimpleRouter()
 router.register(r"topics", TopicViewSet, basename="topics")

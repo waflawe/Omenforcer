@@ -12,5 +12,5 @@ ADD .env.docker /django-simple-forum/.env
 
 RUN mkdir log/
 
-CMD sleep 7; python manage.py makemigrations; python manage.py migrate; python manage.py collectstatic --no-input; \
+CMD sleep 10; python manage.py makemigrations; python manage.py migrate; python manage.py collectstatic --no-input; \
 gunicorn forum.wsgi:application -c /django-simple-forum/gunicorn.conf.py

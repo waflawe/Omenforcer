@@ -1,6 +1,6 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from django.conf import settings
 
 from schemora.conf import schemora_settings
 
@@ -16,7 +16,10 @@ class UserSettings(models.Model):
     timezone = models.CharField(max_length=30, default=schemora_settings.USER_SETTINGS.DEFAULT_USER_TIMEZONE)
     avatar = models.ImageField(upload_to=process_upload_user_avatar,
                                default=schemora_settings.USER_SETTINGS.DEFAULT_USER_AVATAR_FILENAME)
-    signature = models.CharField(max_length=64, null=True)
+    signature = models.CharField(max_length=64, blank=True, default="")
+
+    def __str__(self):
+        return f"{self.user} settings."
 
 
 class Review(models.Model):
@@ -27,9 +30,15 @@ class Review(models.Model):
     feedback = models.BooleanField(null=True)
     time_added = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"{self.reviewer} review on {self.user}."
+
 
 class UserRating(models.Model):
     """ Модель рейтинга конкретного камрада. """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.user} rating is {self.rating}."

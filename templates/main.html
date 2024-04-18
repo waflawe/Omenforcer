@@ -147,20 +147,25 @@
                 <h5 class="text-white">Информация:</h5>
                 <h6 class="text-white">Общее количество тем: {{total_topics}}</h6>
                 <h6 class="text-white">Общее количество сообщений: {{total_messages}}</h6>
-                <h6 class="text-white">Последний зарегестрировавшийся пользователь: <a href="{% url 'home_app:some_user' last_joined.username %}">{{last_joined.username}}</a>
-                в
-                    {% if tzone %}
-                        {% if tzone != 'Default' %}
-                            {{last_joined.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
-                        {% else %}
-                            {{last_joined.date_joined|date:"H:i, d/m/Y"}}
-                        {% endif %}
+                <h6 class="text-white">Последний зарегестрировавшийся пользователь:
+                    {% if last_joined %}
+                        <a href="{% url 'home_app:some_user' last_joined.username %}">{{last_joined.username}}</a>
+                        в
+                            {% if tzone %}
+                                {% if tzone != 'Default' %}
+                                    {{last_joined.date_joined|timezone:tzone|date:"H:i, d/m/Y"}}
+                                {% else %}
+                                    {{last_joined.date_joined|date:"H:i, d/m/Y"}}
+                                {% endif %}
+                            {% else %}
+                                {{last_joined.date_joined|date:"H:i, d/m/Y"}}
+                            {% endif %}</h6>
+                        {% timezone tzone %}
+                        <h6 class="text-white">Текущее время: {% now "H:i, d/m/Y" %}</h6>
+                        {% endtimezone %}
                     {% else %}
-                        {{last_joined.date_joined|date:"H:i, d/m/Y"}}
-                    {% endif %}</h6>
-                {% timezone tzone %}
-                <h6 class="text-white">Текущее время: {% now "H:i, d/m/Y" %}</h6>
-                {% endtimezone %}
+                        отсутствует
+                    {% endif %}
             </td>
         </tr>
         </tbody>

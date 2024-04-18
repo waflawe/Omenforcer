@@ -1,6 +1,6 @@
-from schemora.core.types import E, ErrorMessage
-
 from typing import NamedTuple, Optional, Type
+
+from schemora.core.types import E, ErrorMessage
 
 
 class Field(NamedTuple):

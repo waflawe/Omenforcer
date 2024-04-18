@@ -1,6 +1,7 @@
-from pathlib import Path
 from os.path import join
+from pathlib import Path
 from typing import List
+
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -109,20 +110,20 @@ TOTAL_TOPICS_CACHE_NAME = "total_topics_count"
 TOTAL_COMMENTS_CACHE_NAME = "total_comments_count"
 AGGREGATE_COUNT_CACHE_NAME = "aggregate_count_topics_in_sections"
 
-LOGGING = {
-    "version": 1,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler"
-        }
-    },
-    "loggers": {
-        "django.db.backends": {
-            "handlers": ["console"],
-            "level": env("DJANGO_LOG_LEVEL", default="DEBUG")
-        }
-    }
-}
+# LOGGING = {
+#     "version": 1,
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler"
+#         }
+#     },
+#     "loggers": {
+#         "django.db.backends": {
+#             "handlers": ["console"],
+#             "level": env("DJANGO_LOG_LEVEL", default="DEBUG")
+#         }
+#     }
+# }
 
 LANGUAGE_CODE = 'en-us'
 

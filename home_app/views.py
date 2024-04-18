@@ -1,15 +1,23 @@
-from django.shortcuts import redirect, render, reverse
-from django.http import HttpResponse, HttpRequest
+from typing import Dict, Literal, Optional
+
 from django.contrib.auth import logout
-from django.views.generic import View
-from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect, render, reverse
+from django.urls import reverse_lazy
+from django.views.generic import View
 
-from services.home_app_utils import *
-from home_app.forms import RegisterForm, AuthForm
+from home_app.forms import AuthForm, RegisterForm
+from services.home_app_utils import (
+    AuthViewUtils,
+    RegisterViewUtils,
+    SettingsViewUtils,
+    SomeUserViewUtils,
+    check_flag,
+    check_is_user_auth,
+)
 from services.home_mixins import AddReviewMixin, DropReviewMixin, get_rating_operation_error_message
-
-from typing import Dict, Optional
 
 
 def home_view(request: HttpRequest) -> HttpResponse:
@@ -19,7 +27,7 @@ def home_view(request: HttpRequest) -> HttpResponse:
 class _ReviewOperationOnErrorMixin(View):
     """ Миксин, содержащий базовый on_erorr метод, который срабатывает при получении ошибки. """
 
-    def on_error(self, user: User, error: Optional[int] = None) -> HttpResponse:
+    def on_error(self, user: User | Literal[False], error: Optional[int] = None) -> HttpResponse:
         param = f"show_error={error}" if error else "show_success=True"
         return redirect(f'{reverse("home_app:some_user", kwargs={"username": user.username})}?{param}')
 
@@ -62,7 +70,8 @@ class SomeUserView(View):
 class AuthView(View):
     def get(self, request: HttpRequest, flag_error: Optional[bool] = False,
             form: Optional[Dict] = None) -> HttpResponse:
-        if check_is_user_auth(request): return redirect("/")
+        if check_is_user_auth(request):
+            return redirect("/")
         context = {
             "form": AuthForm(form),
             "flag_error": flag_error,
@@ -71,7 +80,8 @@ class AuthView(View):
         return render(request, "home/auth.html", context=context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        if check_is_user_auth(request): return redirect("/")
+        if check_is_user_auth(request):
+            return redirect("/")
         return AuthViewUtils().auth_view_utils(self, request)
 
 
@@ -84,12 +94,14 @@ class LogoutView(View):
 
 class RegisterView(View):
     def get(self, request: HttpRequest, flag: Optional[bool] = False, form: Optional[Dict] = None) -> HttpResponse:
-        if check_is_user_auth(request): return redirect("/")
+        if check_is_user_auth(request):
+            return redirect("/")
         context = {"form": RegisterForm(form), "flag": flag}
         return render(request, "home/register.html", context=context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        if check_is_user_auth(request): return redirect("/")
+        if check_is_user_auth(request):
+            return redirect("/")
         return RegisterViewUtils().register_view_utils(self, request)
 
 

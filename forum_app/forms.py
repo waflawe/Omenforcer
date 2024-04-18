@@ -1,7 +1,7 @@
 from django import forms
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 
-from forum_app.models import Topic, Comment
+from forum_app.models import Comment, Topic
 
 
 class AddTopicForm(forms.ModelForm):

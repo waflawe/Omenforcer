@@ -1,31 +1,39 @@
-from rest_framework.generics import ListAPIView, CreateAPIView
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework import mixins, status
-from rest_framework.viewsets import GenericViewSet
-from django.shortcuts import get_object_or_404
+from typing import NamedTuple, Optional
+
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import mixins, status
+from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
-from forum_app.models import Topic
-from apiv1.serializers import (
-    UserSerializer, TopicsSerializer, CommentSerializer, TopicDetailSerializer, SectionsSerializer,
-    DefaultErrorSerializer, UpdateSettingsSerializer
-)
-from forum_app.constants import dict_sections
 from apiv1.filters import TopicsSearchFilter
-from services.forum_mixins import DeleteTopicMixin, AddInstanceMixin, get_topic_and_validate_section
-from services.home_mixins import (
-    UpdateSettingsMixin, AddReviewMixin, DropReviewMixin, get_rating_operation_error_message
+from apiv1.serializers import (
+    CommentSerializer,
+    DefaultErrorSerializer,
+    SectionsSerializer,
+    TopicDetailSerializer,
+    TopicsSerializer,
+    UpdateSettingsSerializer,
+    UserSerializer,
 )
-from services.home_app_utils import check_flag
-from schemora.settings.helpers import get_user_settings
-from schemora.core.enums import RequestHost
 from error_messages.forum_error_messages import TOPICS_ERRORS
-
-from typing import Optional, NamedTuple
+from forum_app.constants import dict_sections
+from forum_app.models import Topic
+from schemora.core.enums import RequestHost
+from schemora.settings.helpers import get_user_settings
+from services.forum_mixins import AddInstanceMixin, DeleteTopicMixin, get_topic_and_validate_section
+from services.home_app_utils import check_flag
+from services.home_mixins import (
+    AddReviewMixin,
+    DropReviewMixin,
+    UpdateSettingsMixin,
+    get_rating_operation_error_message,
+)
 
 review_operations_responses = {
     status.HTTP_201_CREATED: None,
@@ -42,7 +50,7 @@ class GetSectionsAPIView(APIView):
     })
     def get(self, request: Request) -> Response:
         """ Возвращает все секции форума. """
-        
+
         return Response({"sections": dict_sections})
 
 
@@ -67,7 +75,7 @@ class TopicViewSet(GenericViewSet, mixins.ListModelMixin, mixins.DestroyModelMix
         status.HTTP_400_BAD_REQUEST: DefaultErrorSerializer,
         status.HTTP_404_NOT_FOUND: DefaultErrorSerializer
     })
-    def retrieve(self, request, *args, **kwargs) -> Response:
+    def retrieve(self, request: Request, *args, **kwargs) -> Response:
         """ Получение темы по ее id. """
 
         if self.kwargs[self.lookup_url_kwarg].isnumeric():
@@ -83,7 +91,7 @@ class TopicViewSet(GenericViewSet, mixins.ListModelMixin, mixins.DestroyModelMix
         status.HTTP_403_FORBIDDEN: DefaultErrorSerializer,
         status.HTTP_404_NOT_FOUND: DefaultErrorSerializer
     })
-    def destroy(self, request, *args, **kwargs) -> Response:
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
         """ Удаление темы по ее id. """
 
         self.delete_topic(request, self.kwargs[self.lookup_url_kwarg])
@@ -94,7 +102,7 @@ class TopicViewSet(GenericViewSet, mixins.ListModelMixin, mixins.DestroyModelMix
         status.HTTP_400_BAD_REQUEST: DefaultErrorSerializer,
         status.HTTP_401_UNAUTHORIZED: DefaultErrorSerializer,
     })
-    def create(self, request, *args, **kwargs) -> Response:
+    def create(self, request: Request, *args, **kwargs) -> Response:
         """ Создание новой темы на форуме. """
 
         flag = self.add_instance(request.user, request.data, request.data)
@@ -141,7 +149,7 @@ class AddCommentApiView(CreateAPIView, AddInstanceMixin):
         status.HTTP_400_BAD_REQUEST: DefaultErrorSerializer,
         status.HTTP_401_UNAUTHORIZED: DefaultErrorSerializer
     })
-    def post(self, request, *args, **kwargs) -> Response:
+    def post(self, request: Request, *args, **kwargs) -> Response:
         flag = self.add_instance(request.user, request.data, request.data, request.data.get("topic", 0))
         data = DefaultErrorSerializer(dict(detail=flag.comment)).data if not flag.topic else dict()
         return Response(data, status=status.HTTP_201_CREATED if flag.topic else status.HTTP_400_BAD_REQUEST)

@@ -1,14 +1,14 @@
-from django.utils.module_loading import import_string
-from django.core.cache import cache
+from datetime import datetime
+from typing import Any, Dict, Tuple, Type, Union
+
+import pytz
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
+from django.utils.module_loading import import_string
 
-from schemora.conf import schemora_settings
 from schemora.cache import get_cache_name_delimiter, get_user_settings_cache_name, get_user_settings_cache_timeout
-
-from typing import Type, Union, Tuple, Any
-from datetime import datetime
-import pytz
+from schemora.conf import schemora_settings
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ def get_user_settings_model() -> Type:
 UserSettings = get_user_settings_model()
 
 
-def get_user_settings(user: Union[User, UserSettings]) -> UserSettings:
+def get_user_settings(user: Union[User | AnonymousUser, UserSettings]) -> UserSettings:
     """ Функция для получения объекта настроек пользователя. """
 
     if isinstance(user, UserSettings):
@@ -33,7 +33,7 @@ def get_user_settings(user: Union[User, UserSettings]) -> UserSettings:
 
         if not user_settings:
             user_settings = UserSettings.objects.get(user=user)
-            cache.set(settings_cache_name, user_settings, get_user_settings_cache_timeout)
+            cache.set(settings_cache_name, user_settings, float(get_user_settings_cache_timeout()))
         return user_settings
     raise TypeError(f"Object {user} is not User instance")
 
@@ -67,7 +67,7 @@ def get_datetime_in_timezone(dt: datetime, timezone: str) -> datetime:
     return dt + dt.utcoffset()
 
 
-def get_instance_datetime_attribute(user: User, instance: Any, attribute: str = "time_added"):
+def get_instance_datetime_attribute(user: User, instance: Any, attribute: str = "time_added") -> Dict[str, str]:
     """ Получение DateTime атрибута объекта в выбранной временной зоне пользователя. """
 
     assert hasattr(instance, attribute), AttributeError(

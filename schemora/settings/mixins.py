@@ -1,12 +1,12 @@
-from schemora.settings.helpers import get_user_settings_model
+from importlib import import_module
+from typing import Dict, Optional
+
 from schemora.conf import schemora_settings
 from schemora.core.datastructures import Setting
 from schemora.core.enums import RequestHost
 from schemora.core.mixins import DataValidationMixin
 from schemora.core.types import E, ValidationClass
-
-from importlib import import_module
-from typing import Optional, Dict
+from schemora.settings.helpers import get_user_settings_model
 
 UserSettings = get_user_settings_model()
 

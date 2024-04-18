@@ -1,4 +1,4 @@
-from schemora.core.datastructures import Setting, Field, Error, Handler
+from schemora.core.datastructures import Error, Field, Handler, Setting
 from schemora.core.types import E, ErrorMessage
 
 

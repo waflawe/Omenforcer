@@ -1,13 +1,13 @@
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from django import forms
-from django.forms import TextInput, PasswordInput
-
-from schemora.settings.helpers import get_user_settings_model
-from forum.settings import MEDIA_ROOT, CUSTOM_USER_AVATARS_DIR, BASE_DIR
-
 import os
 from typing import Literal
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.forms import PasswordInput, TextInput
+
+from forum.settings import BASE_DIR, CUSTOM_USER_AVATARS_DIR, MEDIA_ROOT
+from schemora.settings.helpers import get_user_settings_model
 
 UserSettings = get_user_settings_model()
 

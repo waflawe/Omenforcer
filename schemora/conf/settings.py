@@ -1,6 +1,6 @@
-from django.conf import settings as djsettings
+from typing import Any, Literal, Mapping, NoReturn, Optional
 
-from typing import Any, Mapping, Optional
+from django.conf import settings as djsettings
 
 settings = getattr(djsettings, "SCHEMORA_SETTINGS")
 
@@ -52,8 +52,8 @@ class _NestedSetting:
         self.value = value
         self.parent = parent
 
-    def __get_second_level_setting(self, item):
-        default = DEFAULTS.get(self.parent,).get(item, None)
+    def __get_second_level_setting(self, item) -> Any | NoReturn:
+        default = DEFAULTS.get(self.parent).get(item, None)
         assert default, AssertionError(f"Invalid Schemora setting: {self.parent}.{item}")
         if isinstance(default, DependentSetting):
             assert default.depended in self.settings.keys(), AssertionError(
@@ -83,11 +83,11 @@ class SchemoraSettings:
     (т.е. вложенные настройки не содержат в себе других вложенных настроек).
     """
 
-    def __init__(self, settings_: Mapping = None):
+    def __init__(self, settings_: Optional[Mapping] = None):
         self.settings = settings_
         self.__validate_settings()
 
-    def __get_first_level_setting(self, item):
+    def __get_first_level_setting(self, item) -> _NestedSetting | Any:
         default = DEFAULTS.get(item, None)
         assert default, AssertionError(f"Invalid Schemora setting: {item}")
         value = self.settings.get(item, Empty())
@@ -96,19 +96,21 @@ class SchemoraSettings:
             return _NestedSetting(value, item, self.settings)
         return value
 
-    def __validate_settings(self):
+    def __validate_settings(self) -> Literal[None] | NoReturn:
         for setting_name, setting_value in DEFAULTS.items():
             self.__validate_first_level_required_settings(setting_name, setting_value)
         for setting_name, setting_value in self.settings.items():
             self.__validate_other_settings(setting_name, setting_value)
+        return None
 
-    def __validate_first_level_required_settings(self, __name, __value):
+    def __validate_first_level_required_settings(self, __name, __value) -> Literal[None] | NoReturn:
         if isinstance(__value, RequiredSetting):
             assert not isinstance(getattr(self.settings, __name, Empty()), Empty), AssertionError(
                 f"{__name} Schemora setting is required, but not defined."
             )
+        return None
 
-    def __validate_other_settings(self, __name, __value):
+    def __validate_other_settings(self, __name, __value) -> Literal[None] | NoReturn:
         value = DEFAULTS.get(__name, Empty())
         assert not isinstance(value, Empty), AssertionError(f"Unknown Schemora setting: {__name}")
         for setting_name, setting_value in value.items():
@@ -120,6 +122,7 @@ class SchemoraSettings:
                 assert setting_value.depended in DEFAULTS.keys(), AssertionError(
                     f"Setting {setting_value.depended} is not valid Schemora setting."
                 )
+        return None
 
     def __getitem__(self, item):
         return self.__get_first_level_setting(item)

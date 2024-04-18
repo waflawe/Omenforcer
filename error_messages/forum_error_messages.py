@@ -1,6 +1,6 @@
-from schemora.core.types import ErrorMessage
-
 from typing import Dict
+
+from schemora.core.types import ErrorMessage
 
 ModelField = str
 FieldsErrors = Dict[ModelField, ErrorMessage]

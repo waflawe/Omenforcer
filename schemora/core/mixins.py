@@ -1,9 +1,9 @@
+from typing import Any, Dict, Optional, Tuple
+
 from django import forms
 from rest_framework import serializers
 
-from schemora.core.types import ValidationClass, Instance
-
-from typing import Dict, Optional, Tuple, Any
+from schemora.core.types import Instance, ValidationClass
 
 
 class DataValidationMixin(object):

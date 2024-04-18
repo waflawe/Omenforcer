@@ -1,13 +1,22 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpRequest
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views import View
-from django.urls import reverse_lazy
-
-from services.forum_app_utils import *
-from forum_app.forms import AddTopicForm
-
 from typing import Optional
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views import View
+
+from forum_app.forms import AddTopicForm
+from services.forum_app_utils import (
+    AddCommentViewUtils,
+    AddTopicViewUtils,
+    DeleteTopicViewUtils,
+    ForumHomeViewUtils,
+    SearchViewUtils,
+    SomeIdUtils,
+    SomeSectionViewUtils,
+    SomeUserTopicsViewUtils,
+)
 
 
 def forum_home_view(request: HttpRequest) -> HttpResponse:

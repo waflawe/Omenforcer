@@ -1,9 +1,9 @@
-from schemora.settings.helpers import get_user_settings_model
-from schemora.core.types import E
-from schemora.core.datastructures import Setting
-
 from abc import ABC, abstractmethod
 from typing import Literal
+
+from schemora.core.datastructures import Setting
+from schemora.core.types import E
+from schemora.settings.helpers import get_user_settings_model
 
 UserSettings = get_user_settings_model()
 

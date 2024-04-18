@@ -1,18 +1,34 @@
 from __future__ import annotations
 
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
-from django.urls import reverse
-from django.db.models import Count
-
-from services.forum_mixins import *
-from schemora.settings.helpers import get_upload_crop_path, get_user_settings_model, get_user_avatar_path
-from forum_app.forms import AddTopicForm, AddCommentForm
-
-from random import randrange
-from datetime import datetime
-from typing import List, Dict, Optional
 from dataclasses import dataclass
+from datetime import datetime
+from random import randrange
+from typing import Dict, List, Literal, Optional
+
+from django.conf import settings
+from django.core.cache import cache
+from django.db.models import Count, Q, QuerySet
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+
+from forum_app.constants import dict_sections
+from forum_app.forms import AddCommentForm, AddTopicForm
+from forum_app.models import Topic
+from schemora.core.enums import RequestHost
+from schemora.settings.helpers import get_upload_crop_path, get_user_avatar_path, get_user_settings_model
+from services.common_utils import Context
+from services.forum_mixins import (
+    AddInstanceMixin,
+    BaseContextMixin,
+    DeleteTopicMixin,
+    OffsetAction,
+    PercentsOfTableData,
+    SearchContextMixin,
+    TopicOrCommentObject,
+    get_topic_and_validate_section,
+    validate_section,
+)
 
 Username = str
 UserSettings = get_user_settings_model()
@@ -83,8 +99,8 @@ class SomeIdUtils(BaseContextMixin):
     }
 
     def some_id_view_utils(self, request: HttpRequest, section: str, ids: int) -> Context:
-        topic, section = get_topic_and_validate_section(ids, section)
-        topic = TopicOrCommentObject(topic)
+        tpc, section = get_topic_and_validate_section(ids, section)
+        topic = TopicOrCommentObject(tpc)
         topic.path_to_author_avatar, user_settings = get_user_avatar_path(topic.obj.author)
         topic = self._set_avatar_and_upload_attributes(topic, user_settings)
         topic.user_signature = user_settings.signature
@@ -115,7 +131,8 @@ class SomeIdUtils(BaseContextMixin):
         и аватаром автора темы/комментария.
         """
 
-        if avatar: obj.path_to_author_avatar, _ = get_user_avatar_path(user_settings)
+        if avatar:
+            obj.path_to_author_avatar, _ = get_user_avatar_path(user_settings)
         if obj.obj.upload != "":
             obj.url_to_upload = obj.obj.upload.path.split(settings.MEDIA_ROOT)[-1]
             obj.path_to_crop_upload = get_upload_crop_path(str(obj.obj.upload))
@@ -126,10 +143,11 @@ class SomeIdUtils(BaseContextMixin):
         """ Функция для установления подписей комментаторов. """
 
         authors = tuple(comment.obj.author for comment in comments.values())
-        settings, authors_settings = UserSettings.objects.filter(user__in=authors).all(), list()
+        user_settings, authors_settings = UserSettings.objects.filter(user__in=authors).all(), list()
         for author in authors:
-            for author_settings in settings:
-                if author == author_settings.user: authors_settings.append(author_settings)
+            for author_settings in user_settings:
+                if author == author_settings.user:
+                    authors_settings.append(author_settings)
         for author_settings, comment in zip(authors_settings, comments.items()):
             comment[1].user_signature = author_settings.signature
         return authors_settings

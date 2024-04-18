@@ -1,18 +1,18 @@
-from django.core.validators import MinLengthValidator
+from os import remove
+from typing import Literal
+
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.urls import reverse
+from django.core.validators import MinLengthValidator
 from django.db import models
+from django.db.models import QuerySet
 from django.db.models.fields.files import ImageFieldFile
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
-from django.db.models import QuerySet
-from django.conf import settings
+from django.urls import reverse
 
 from forum_app.constants import Sections
 from schemora.settings.helpers import get_upload_crop_path
-
-from typing import Literal
-from os import remove
 
 
 def _delete_upload(upload: ImageFieldFile | Literal[None]) -> Literal[None]:
@@ -43,11 +43,14 @@ class Comment(models.Model):
     upload = models.ImageField(upload_to=process_comment_upload, null=True)
     time_added = models.DateTimeField(auto_now_add=True)
 
-    def get_upload_link(self):
-        return get_image_link(self.upload)
-
     class Meta:
         ordering = ("time_added",)
+
+    def __str__(self):
+        return f"{self.topic} comment by {self.author}."
+
+    def get_upload_link(self):
+        return get_image_link(self.upload)
 
 
 class Topic(models.Model):
@@ -58,6 +61,12 @@ class Topic(models.Model):
     section = models.CharField(choices=Sections.Sections, max_length=10, default=Sections.GENERAL)
     views = models.PositiveIntegerField(default=0)
     time_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-time_added",)
+
+    def __str__(self):
+        return f"{self.author} topic about '{self.title}'"
 
     def get_absolute_url(self):
         return reverse("forum_app:some_id", kwargs={"ids": self.pk, "section": self.section})
@@ -70,12 +79,6 @@ class Topic(models.Model):
         return (Comment.objects.select_related("author").only
                 ("author__username", "author__id", "comment", "upload", "time_added").filter(topic=self))
 
-    class Meta:
-        ordering = ("-time_added",)
-
-    def __str__(self):
-        return f"{self.author} topic about '{self.title}'"
-
 
 @receiver(pre_delete, sender=Topic)
 def topic_upload_delete(sender, instance, **kwargs):
@@ -83,5 +86,5 @@ def topic_upload_delete(sender, instance, **kwargs):
 
 
 @receiver(pre_delete, sender=Comment)
-def topic_upload_delete(sender, instance, **kwargs):
+def comment_upload_delete(sender, instance, **kwargs):
     _delete_upload(instance.upload)

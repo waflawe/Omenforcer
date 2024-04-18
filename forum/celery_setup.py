@@ -1,7 +1,8 @@
-from forum.settings import CELERY_BROKER_URL, CELERY_RESULT_BACKEND
+import os
 
 from celery import Celery
-import os
+
+from forum.settings import CELERY_BROKER_URL, CELERY_RESULT_BACKEND
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'forum.settings')
 

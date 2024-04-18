@@ -1,7 +1,7 @@
-from schemora.settings import include_setting
-from schemora.core.datastructures import ValidationClasses
-from services.user_settings_handlers import TimezoneHandler, AvatarHandlerBase, SignatureHandlerBase
 from error_messages.home_error_messages import Settings
+from schemora.core.datastructures import ValidationClasses
+from schemora.settings import include_setting
+from services.user_settings_handlers import AvatarHandlerBase, SignatureHandlerBase, TimezoneHandler
 
 # Переменная со всеми настройками пользователя.
 settings = (

@@ -8,3 +8,5 @@ media/offers/
 venv
 **/__pycache__/
 test.py
+mypy.ini
+ruff.toml

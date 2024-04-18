@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-from django.contrib.auth.models import User
+from typing import Dict, Literal, NamedTuple, Optional, Tuple, Union
+
+from django.contrib.auth.models import AnonymousUser, User
+from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from django.http import HttpRequest
 from rest_framework.request import Request
-from django.db.models import F
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.cache import cache
 
-from home_app.models import Review, UserRating
-from services.user_settings import settings
-from schemora.core.types import E, ErrorMessage
-from schemora.core.datastructures import Setting
-from schemora.settings.helpers import get_user_settings_model
-from schemora.cache import get_cache_name_delimiter, get_user_settings_cache_name
 from error_messages.home_error_messages import Ratings
-
-from typing import Dict, Literal, NamedTuple, Union, Tuple, Optional
+from home_app.models import Review, UserRating
+from schemora.cache import get_cache_name_delimiter, get_user_settings_cache_name
+from schemora.core.datastructures import Setting
+from schemora.core.enums import RequestHost
+from schemora.core.types import E, ErrorMessage
+from schemora.settings.helpers import get_user_settings_model
+from services.user_settings import settings
 
 UserSettings = get_user_settings_model()
 
@@ -31,16 +32,19 @@ class ProcessSettingReturn(NamedTuple):
 
 
 def get_rating_operation_error_message(error_code: E) -> ErrorMessage:
-    if error_code == 3: return Ratings.NOT_CHANGED_REVIEW
-    elif error_code == 4: return Ratings.REVIEW_EMPTY
+    if error_code == 3:
+        return Ratings.NOT_CHANGED_REVIEW
+    elif error_code == 4:
+        return Ratings.REVIEW_EMPTY
 
 
 class UpdateSettingsMixin(object):
     """ Миксин для обновления настроек пользователя, прописанных в файле services.user_settings. """
 
-    request_host = None   # переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
+    # Переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
+    request_host: RequestHost = None
 
-    def update_settings(self, user: User, post: Dict, files: Dict) -> UpdateSettingsReturn:
+    def update_settings(self, user: User | AnonymousUser, post: Dict, files: Dict) -> UpdateSettingsReturn:
         flag_success, user_settings = False, UserSettings.objects.select_related("user").get(user=user)
 
         for setting in settings:
@@ -71,7 +75,7 @@ class _ReviewOperationPermissionsMixin:
     """
 
     def check_perms(self, request: HttpRequest | Request, user_identifier: Dict) \
-            -> Tuple[Review, User] | Tuple[E, Literal[False] | User]:
+            -> Tuple[Review | Literal[None], User] | Tuple[E, Literal[False] | User]:
         try:
             user = User.objects.get(**user_identifier)
         except (ObjectDoesNotExist, ValueError):
@@ -85,16 +89,19 @@ class AddReviewMixin(_ReviewOperationPermissionsMixin):
     """ Миксин для добавления/изменения отзыва. """
 
     def add_review(self, request: HttpRequest | Request, user_identifier: Dict, like: Optional[bool] = True) \
-            -> Tuple[Literal[None] | E, User]:
+            -> Tuple[Literal[None] | E, User | Literal[False]]:
         flag, user = self.check_perms(request, user_identifier)
-        if isinstance(flag, E): return flag, user
+        if isinstance(flag, E):
+            return flag, user
         review, created = (flag, False) if flag else (Review.objects.create(reviewer=request.user, user=user), True)
         user_reviews, _ = UserRating.objects.get_or_create(user=user)
-        if review.feedback == like: return E(3), user
+        if review.feedback == like:
+            return E(3), user
         update_value = 1 if created else 2
         review.feedback, user_reviews.rating = (like, (F("rating") + update_value)
                                                 if like else (F("rating") - update_value))
-        review.save(update_fields=["feedback", "time_added"]), user_reviews.save(update_fields=["rating"])
+        review.save(update_fields=["feedback", "time_added"])
+        user_reviews.save(update_fields=["rating"])
         return None, user
 
 
@@ -102,10 +109,12 @@ class DropReviewMixin(_ReviewOperationPermissionsMixin):
     """ Миксин для удаления отзыва. """
 
     def drop_review(self, request: HttpRequest | Request, user_identifier: Dict, **kwargs) \
-            -> Tuple[Literal[None] | E, User]:
+            -> Tuple[Literal[None] | E, User | Literal[False]]:
         flag, user = self.check_perms(request, user_identifier)
-        if isinstance(flag, E): return flag, user
-        if not flag: return E(4), user
+        if isinstance(flag, E):
+            return flag, user
+        if not flag:
+            return E(4), user
         review, user_reviews, _ = flag, *UserRating.objects.get_or_create(user=user)
         update_value = -1 if review.feedback else 1
         user_reviews.rating = F("rating") + update_value
@@ -120,7 +129,7 @@ class GetUserReviewsInformationMixin(object):
     и отзыве текущего юзера на запрашиваемого камрада.
     """
 
-    def get_user_reviews_info(self, reviewer: User, user: User) -> Dict:
+    def get_user_reviews_info(self, reviewer: User | AnonymousUser, user: User) -> Dict:
         like = Review.objects.filter(reviewer=reviewer, user=user).first() if reviewer.is_authenticated else None
         return {
             "user_rating": UserRating.objects.get(user=user).rating,

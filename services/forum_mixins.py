@@ -1,23 +1,23 @@
-from django.http import HttpRequest, Http404
-from django.db.models.query import QuerySet
-from django.db.models import Q, F
-from django.shortcuts import get_object_or_404
-from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
-from django.core.cache import cache
-from django.conf import settings
-
-from forum_app.models import Topic, Comment
-from forum_app.constants import dict_sections, SearchParamsExpressions
-from services.common_utils import Context
-from schemora.core.mixins import DataValidationMixin
-from schemora.core.enums import RequestHost
-from schemora.settings.helpers import get_user_settings_model, get_user_timezone
-from tasks.home_app_tasks import make_center_crop
-from error_messages.forum_error_messages import TOPICS_ERRORS, COMMENTS_ERRORS, ErrorMessage
-
-from typing import Optional, NoReturn, NamedTuple, Tuple, Sized, Literal, Iterable, Dict, List
 from dataclasses import dataclass
+from typing import Dict, Iterable, List, Literal, NamedTuple, NoReturn, Optional, Sized, Tuple
+
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser, User
+from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
+from django.db.models import F, Q
+from django.db.models.query import QuerySet
+from django.http import Http404, HttpRequest
+from django.shortcuts import get_object_or_404
+
+from error_messages.forum_error_messages import COMMENTS_ERRORS, TOPICS_ERRORS, ErrorMessage
+from forum_app.constants import SearchParamsExpressions, dict_sections
+from forum_app.models import Comment, Topic
+from schemora.core.enums import RequestHost
+from schemora.core.mixins import DataValidationMixin
+from schemora.settings.helpers import get_user_settings_model, get_user_timezone
+from services.common_utils import Context
+from tasks.home_app_tasks import make_center_crop
 
 ReverseURL = str
 UserSettings = get_user_settings_model()
@@ -31,7 +31,7 @@ class PercentsOfTableData(NamedTuple):
 
     one_data: str = "20%"
     two_data: str = "80%"
-    three_data: Optional[str] = False
+    three_data: Optional[str] = None
 
 
 @dataclass
@@ -39,12 +39,12 @@ class TopicOrCommentObject:
     """ Датакласс для хранения всей нужной для рендеринга информации о заголовке темы или комментарие. """
 
     obj: Topic | Comment
-    path_to_author_avatar: str = None
+    path_to_author_avatar: Optional[str] = None
     url_to_upload: Optional[str] = None
     path_to_crop_upload: Optional[str] = None
     percents_of_tds_widths: PercentsOfTableData = PercentsOfTableData()
     section: Optional[str] = None
-    user_signature: str = None
+    user_signature: Optional[str] = None
 
 
 class OffsetButton(NamedTuple):
@@ -78,7 +78,8 @@ class OffsetAction(NamedTuple):
     offset_action_param2: Optional[str] = None
 
 
-def validate_section(section: str, topic: Optional[Topic] = None, raise_exception: bool = True) -> NoReturn | str:
+def validate_section(section: str, topic: Optional[Topic] = None, raise_exception: bool = True) \
+        -> NoReturn | Literal[False] | str:
     """ Функция для проверки соответствия переданной секции форума с секцией конкретной темы. """
 
     if (not dict_sections.get(section, False)) or (topic and topic.section != section.lower()):
@@ -149,7 +150,8 @@ class BaseContextMixin(object):
     }
 
     def get_base_context(self, request: HttpRequest, **kwargs) -> Context:
-        context, queryset = Context(offset_params={}), kwargs.get("queryset", False)
+        context: Context = Context({"offset_params": {}})
+        queryset = kwargs.get("queryset", False)
         for template_name, arg_name in self.static_base_context_variables.items():
             context[template_name] = kwargs.get(arg_name)
         if kwargs.get("get_tzone", False):
@@ -160,7 +162,7 @@ class BaseContextMixin(object):
             context["tzone"] = "UTC" if context["tzone"] in ("Default", False) else context["tzone"]
             context["total_topics"] = info[1]
             context["total_messages"] = info[1] + info[2]
-        if not queryset is False:
+        if queryset is not False:
             objects, offset, offset_next, offset_back = self._clip_topics_and_get_offset_params(request, queryset)
             context[kwargs["queryset_context_alias"]] = objects if len(objects) > 0 else tuple()
             context["offset_params"]["offset_next"], context["offset_params"]["offset"] = offset_next, offset
@@ -239,8 +241,10 @@ class DeleteTopicMixin(object):
         cache.delete(settings.TOTAL_TOPICS_CACHE_NAME)
         cache.delete(settings.TOTAL_COMMENTS_CACHE_NAME)
         cache.delete(settings.AGGREGATE_COUNT_CACHE_NAME)
+        return None
 
-    def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) -> Topic | NoReturn | False:
+    def check_perms(self, request: HttpRequest, ids: int, section: Optional[str] = None) \
+            -> Topic | NoReturn | Literal[False]:
         topic = get_object_or_404(Topic, pk=ids)
         if section:
             validate_section(section, topic)
@@ -252,12 +256,14 @@ class DeleteTopicMixin(object):
 class AddInstanceMixin(DataValidationMixin):
     """ Миксин для добавления темы или комментария. """
 
-    request_host = None   # переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
+    # Переменная-источник запроса. Имеет значение RequestHost.APIVIEW или RequestHost.VIEW
+    request_host: RequestHost = None
 
-    def add_instance(self, user: User, post: Dict, files: Dict, topic: Optional[int] = None,
+    def add_instance(self, user: User | AnonymousUser, post: Dict, files: Dict, topic: Optional[int] = None,
                      section: Optional[str] = None) -> AddInstanceReturn:
         kwargs = self._get_and_validate_kwargs(user, topic, section)
-        if isinstance(kwargs, ErrorMessage): return AddInstanceReturn(None, kwargs)
+        if isinstance(kwargs, ErrorMessage):
+            return AddInstanceReturn(None, kwargs)
         instance = Topic.objects.create(**kwargs) if not topic else Comment.objects.create(**kwargs)
         v, is_valid, data = self.validate_received_data(post, files, instance)
 
@@ -284,7 +290,8 @@ class AddInstanceMixin(DataValidationMixin):
             return TOPICS_ERRORS["id"]
         if section:
             flag = validate_section(section, kwargs["topic"])
-            if not flag: return TOPICS_ERRORS["section"]
+            if not flag:
+                return TOPICS_ERRORS["section"]
         return kwargs
 
     def _get_error_return(self, instance: Topic | Comment, v, topic: Optional[int] = None) -> AddInstanceReturn:
