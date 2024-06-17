@@ -1,4 +1,3 @@
-<!-- TOC --><a name="omenforcer"></a>
 # Omenforcer  
 Простой форум, посвященный фреймворку Django, написанный на фреймворках
 __[Django](https://github.com/django/django)__,

@@ -1,4 +1,3 @@
-<!-- TOC --><a name="omenforcer"></a>
 # Omenforcer
 A simple forum dedicated to the Django framework, written in frameworks
 __[Django](https://github.com/django/django)__,
