@@ -7,11 +7,11 @@ app_name = "forum_app"
 # domain.com/forum/
 urlpatterns = [
     path("", views.forum_home_view, name="home"),
-    path("addtopic/", views.AddTopicView.as_view(), name="add_topic"),
-    path("mytopics/", views.SomeUserTopicsView.as_view(), name="my_topics"),
+    path("add-topic/", views.AddTopicView.as_view(), name="add_topic"),
+    path("my-topics/", views.SomeUserTopicsView.as_view(), name="my_topics"),
     path("search/", views.search_view, name="search"),
     path("<str:section>/", views.some_section_view, name="some_section"),
     path("<str:section>/<int:ids>/", views.some_id_view, name="some_id"),
-    path("<str:section>/<int:ids>/addcomment/", views.AddCommentView.as_view(), name="add_comment"),
+    path("<str:section>/<int:ids>/add-comment/", views.AddCommentView.as_view(), name="add_comment"),
     path("<str:section>/<int:ids>/delete/", views.DeleteTopicView.as_view(), name="delete_topic"),
 ]

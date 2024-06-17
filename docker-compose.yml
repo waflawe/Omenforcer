@@ -7,7 +7,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=forum
+      - POSTGRES_DB=omenforcer
       - POSTGRES_HOST_AUTH_METHOD=trust
     networks:
       - web-network
@@ -19,8 +19,8 @@ services:
     build:
       context: ./
     volumes:
-      - static_volume:/django-simple-forum/static/
-      - media_volume:/django-simple-forum/media/
+      - static_volume:/Omenforcer/static/
+      - media_volume:/Omenforcer/media/
 #    ports:
 #      - "8000:8000"
     networks:
@@ -63,7 +63,7 @@ services:
       context: ./
     command: celery -A forum.celery_setup:app worker --loglevel=info
     volumes:
-      - media_volume:/django-simple-forum/media/
+      - media_volume:/Omenforcer/media/
     depends_on:
       - redis
       - postgres-db

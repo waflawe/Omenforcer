@@ -15,19 +15,21 @@ DEBUG = int(env("DEBUG"))
 ALLOWED_HOSTS: List[str] = env("ALLOWED_HOSTS").split(", ")
 
 INSTALLED_APPS = [
-    "forum_app.apps.ForumAppConfig",
-    "home_app.apps.HomeAppConfig",
-    "apiv1.apps.Apiv1Config",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "djoser",
-    'drf_spectacular',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    "rest_framework",
+    "rest_framework.authtoken",
+    "djoser",
+    'drf_spectacular',
+
+    "forum_app.apps.ForumAppConfig",
+    "home_app.apps.HomeAppConfig",
+    "apiv1.apps.Apiv1Config",
 ]
 
 MIDDLEWARE = [
@@ -110,20 +112,20 @@ TOTAL_TOPICS_CACHE_NAME = "total_topics_count"
 TOTAL_COMMENTS_CACHE_NAME = "total_comments_count"
 AGGREGATE_COUNT_CACHE_NAME = "aggregate_count_topics_in_sections"
 
-# LOGGING = {
-#     "version": 1,
-#     "handlers": {
-#         "console": {
-#             "class": "logging.StreamHandler"
-#         }
-#     },
-#     "loggers": {
-#         "django.db.backends": {
-#             "handlers": ["console"],
-#             "level": env("DJANGO_LOG_LEVEL", default="DEBUG")
-#         }
-#     }
-# }
+LOGGING = {
+    "version": 1,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler"
+        }
+    },
+    "loggers": {
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": env("DJANGO_LOG_LEVEL", default="DEBUG")
+        }
+    }
+}
 
 LANGUAGE_CODE = 'en-us'
 
@@ -153,7 +155,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Django Simple Forum",
+    "TITLE": "Omenforcer",
     'VERSION': '1.1.0'
 }
 
